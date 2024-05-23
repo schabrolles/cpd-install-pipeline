@@ -1,0 +1,323 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+  - default: icr.io/cpopen/cpd/olm-utils-v2
+    description: olm-utils images
+    name: OLM_UTILS_IMAGE
+    type: string
+  - default: 4.8.5
+    description: cloud-pak for data version
+    name: VERSION
+    type: string
+  - default: watsonx_ai
+    description: cloud-pak components to install
+    name: COMPONENTS
+    type: string
+  - default: cpd
+    description: cloud-pak operand namspace
+    name: PROJECT_CPD_INST_OPERANDS
+    type: string
+  - default: cpd-operators
+    description: cloud-pak operand namspace
+    name: PROJECT_CPD_INST_OPERATORS
+    type: string
+  - default: ibm-cert-manager
+    description: cloud-pak ibm-cert-manager namespace
+    name: PROJECT_CERT_MANAGER
+    type: string
+  - default: ibm-licensing
+    description: cloud-pak ibm-licensing namespace
+    name: PROJECT_LICENSE_SERVICE
+    type: string
+  - default: ibm-scheduler
+    description: cloud-pak scheduler namespace
+    name: PROJECT_SCHEDULING_SERVICE
+    type: string
+  - name: IBM_ENTITLEMENT_KEY
+    type: string
+  - default: ocs-storagecluster-ceph-rbd
+    description: StorageClass for Block
+    name: STG_CLASS_BLOCK
+    type: string
+  - default: ocs-storagecluster-cephfs
+    description: StorageClass for Files
+    name: STG_CLASS_FILE
+    type: string
+  - default: watsonx-ai
+    description: select between (cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data,
+      watsonx-gov-model-management, watsonx-gov-risk-compliance)
+    name: ENTITLEMENT
+    type: string
+  - default: "false"
+    description: Set true if you want to enable ibm-scheduler
+    name: SCHEDULER
+    type: string
+  - default: "true"
+    description: 'Set false for non-prod environment '
+    name: PRODUCTION
+    type: string
+  - default: "true"
+    name: ACCEPT_LICENCE
+    type: string
+  - default: "false"
+    description: Set true if you want to install without GPU
+    name: NO_GPU
+    type: string
+  tasks:
+  - name: get-cr-status
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        get-cr-status \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+    runAfter:
+    - apply-entitlement
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: update-pull-secret
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        add-icr-cred-to-global-pull-secret \
+        --entitled_registry_key=$(params.IBM_ENTITLEMENT_KEY)
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: apply-cluster-components
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        apply-cluster-components \
+        --release=$(params.VERSION) \
+        --license_acceptance=$(params.ACCEPT_LICENCE) \
+        --cert_manager_ns=$(params.PROJECT_CERT_MANAGER) \
+        --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
+        --case_download=true \
+        --from_oci=true
+    runAfter:
+    - update-pull-secret
+    taskRef:
+      kind: Task
+      name: olm-utils
+    timeout: 1h0m0s
+  - name: authorize-inst-topology
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        authorize-instance-topology \
+        --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+    runAfter:
+    - apply-scheduler
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: setup-inst-topology
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        setup-instance-topology \
+        --release=$(params.VERSION) \
+        --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --license_acceptance=$(params.ACCEPT_LICENCE) \
+        --block_storage_class=$(params.STG_CLASS_BLOCK) \
+        --case_download=true \
+        --from_oci=true
+    runAfter:
+    - authorize-inst-topology
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: cpd-platform-apply-olm
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        apply-olm \
+        --release=$(params.VERSION) \
+        --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+        --components=cpd_platform \
+        --case_download=true \
+        --from_oci=true
+    runAfter:
+    - setup-inst-topology
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: cpd-platdorm-apply-cr
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        apply-cr \
+        --release=$(params.VERSION) \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --components=cpd_platform \
+        --block_storage_class=$(params.STG_CLASS_BLOCK) \
+        --file_storage_class=$(params.STG_CLASS_FILE) \
+        --license_acceptance=$(params.ACCEPT_LICENCE)
+    runAfter:
+    - cpd-platform-apply-olm
+    taskRef:
+      kind: Task
+      name: olm-utils
+    timeout: 1h30m0s
+  - name: component-apply-olm
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        apply-olm \
+        --release=$(params.VERSION) \
+        --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+        --components=$(params.COMPONENTS) \
+        --case_download=true \
+        --from_oci=true
+    runAfter:
+    - cpd-platform-apply-olm
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: get-license
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        get-license \
+        --release=$(params.VERSION) \
+        --license-type=EE
+    runAfter:
+    - apply-entitlement
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: components-apply-cr
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        apply-cr \
+        --release=$(params.VERSION) \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --components=$(params.COMPONENTS) \
+        --block_storage_class=$(params.STG_CLASS_BLOCK) \
+        --file_storage_class=$(params.STG_CLASS_FILE) \
+        --license_acceptance=$(params.ACCEPT_LICENCE)
+    runAfter:
+    - cpd-platdorm-apply-cr
+    - component-apply-olm
+    taskRef:
+      kind: Task
+      name: olm-utils
+    timeout: 3h0m0s
+  - name: apply-entitlement
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        apply-entitlement \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --entitlement=$(params.ENTITLEMENT) --production=$(params.PRODUCTION) --apply_branding=true
+    runAfter:
+    - no-gpu-patch
+    - components-apply-cr
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: instance-details
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        get-cpd-instance-details \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --get_admin_initial_credentials=true
+    runAfter:
+    - apply-entitlement
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: no-gpu-patch
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |+
+        TIME=90
+        while ! oc get -n $(params.PROJECT_CPD_INST_OPERANDS) watsonxai/watsonxai-cr > /dev/null 2>&1; do
+          [ $TIME -eq 0 ] && exit 2
+          echo "Wait from watsonxai-cr to be created. ($TIME)"
+          sleep 60
+          TIME=$((TIME - 1))
+        done
+
+        echo
+        echo "Patch watsonxai-cr to disable tunning-studio (bamdev)"
+        oc patch watsonxai watsonxai-cr \
+        --namespace=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --type='json' \
+        -p='[{"op": "add", "path": "/spec/tuning_disabled", "value": true}]'
+
+        echo
+        echo "restart watsonx-ai operator"
+        sleep 2
+        oc delete pod -n $(params.PROJECT_CPD_INST_OPERATORS) -l app.kubernetes.io/name=ibm-cpd-watsonx-ai-operator --ignore-not-found
+
+    runAfter:
+    - cpd-platdorm-apply-cr
+    - component-apply-olm
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(params.NO_GPU)
+      operator: in
+      values:
+      - "true"
+      - "yes"
+  - name: apply-scheduler
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        apply-scheduler \
+        --release=$(params.VERSION) \
+        --license_acceptance=$(params.ACCEPT_LICENCE) \
+        --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
+        --case_download=true \
+        --from_oci=true
+    runAfter:
+    - apply-cluster-components
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(params.SCHEDULER)
+      operator: in
+      values:
+      - "true"
+      - "yes"
