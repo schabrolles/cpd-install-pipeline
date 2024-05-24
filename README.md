@@ -40,13 +40,13 @@ oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="3
 
 From the openshift console, enter in the project `cpd-install` and select the tab “pipeline" from the menu on the left.
 
-![Image.png](https://res.craft.do/user/full/de0964ce-f4e1-6349-286f-b59814cf4260/doc/48A286AD-0E40-4681-83FF-97A2BBB33870/A0D3CEA8-62C6-4C94-A66E-C1A7A684BE68_2/EIgT0wFGXxxF9xPzi3RxnqHWwHAAiYikypdAiw7wrqEz/Image.png)
+<img width="1666" alt="pipeline-gui1" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/0eea2ace-42d6-449f-96f7-4cc3d82b311d">
 
 Click on the **cpd-install** pipeline.
 
 On the next page, click on the action button on the right end side of the page and select “**start**”
 
-![Image.png](https://res.craft.do/user/full/de0964ce-f4e1-6349-286f-b59814cf4260/doc/48A286AD-0E40-4681-83FF-97A2BBB33870/E66B8D89-30E7-4766-8A1F-5077313DF19E_2/Wy7CZB3zknYeEJPvqks0abuTAZSz5BcdC67zIa5yGeAz/Image.png)
+<img width="1666" alt="pipeline-gui2" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/73c2f844-26e7-4022-8db3-d930ad539b23">
 
 This will open a forms to customize your installation.
 
@@ -59,7 +59,7 @@ click on **Start**
 
 The full installation duration is about ~2h
 
-![Image.png](https://res.craft.do/user/full/de0964ce-f4e1-6349-286f-b59814cf4260/doc/48A286AD-0E40-4681-83FF-97A2BBB33870/9FBEF9B2-DBE4-4E0E-8013-8CA93A6389C2_2/dXYxIkknDp4JKJTdlqVaVXroGnyPxoBO1tQEpz45n0kz/Image.png)
+<img width="1380" alt="pipeline-gui3" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/e9e6a549-1eca-4b76-9faf-79c5e4d1840a">
 
 ### 2b- Starting pipeline by applying YAML
 
