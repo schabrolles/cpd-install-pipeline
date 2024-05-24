@@ -1,7 +1,7 @@
 apiVersion: v2
 name: cpd-install-pipeline
 description: Tekton Pipeline to automate IBM Cloud Pak for Data Deployment
-
+icon: https://www.disid.com/wp-content/uploads/ibm-cloud-pak-for-data.png
 # A chart can be either an 'application' or a 'library' chart.
 #
 # Application charts are a collection of templates that can be packaged into versioned archives
@@ -15,7 +15,7 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.1.2
+version: 1.1.1
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to

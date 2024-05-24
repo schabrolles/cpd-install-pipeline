@@ -1,0 +1,7 @@
+apiVersion: helm.openshift.io/v1beta1
+kind: HelmChartRepository
+metadata:
+  name: cpd-install-pipeline
+spec:
+  connectionConfig:
+    url: 'https://schabrolles.github.io/cpd-install-pipeline'
