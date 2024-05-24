@@ -14,7 +14,7 @@ spec:
   - name: VERSION
     value: 4.8.5
   - name: COMPONENTS
-    value: watsonx_ai
+    value: wml,ws
   - name: PROJECT_CPD_INST_OPERANDS
     value: cpd
   - name: PROJECT_CPD_INST_OPERATORS
@@ -32,7 +32,7 @@ spec:
   - name: STG_CLASS_FILE
     value: ocs-storagecluster-cephfs
   - name: ENTITLEMENT
-    value: watsonx-ai
+    value: cpd-enterprise
   - name: SCHEDULER
     value: "false"
   - name: PRODUCTION

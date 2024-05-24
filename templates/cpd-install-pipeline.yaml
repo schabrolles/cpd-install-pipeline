@@ -13,7 +13,7 @@ spec:
     description: cloud-pak for data version
     name: VERSION
     type: string
-  - default: watsonx_ai
+  - default: wml,ws
     description: cloud-pak components to install
     name: COMPONENTS
     type: string
@@ -47,7 +47,7 @@ spec:
     description: StorageClass for Files
     name: STG_CLASS_FILE
     type: string
-  - default: watsonx-ai
+  - default: cpd-enterprise
     description: select between (cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data,
       watsonx-gov-model-management, watsonx-gov-risk-compliance)
     name: ENTITLEMENT
