@@ -13,15 +13,21 @@ Install automatically IBM Cloudpak for Data using Tekton Pipeline
 
 After having installed the openshift-pipeline operator, use helm to deploy the tasks and pipeline in a namespace of your cluster.
 
+- adding the helm repo
 ```
-helm install <name> <helm_chart> --create-namespace -n <namespace> [--set arch=(ppc64le|s390x)]
+helm repo add cpd-install-pipeline https://schabrolles.github.io/cpd-install-pipeline
+```
+
+- deploying the pipeline configuration with helm-cli
+```
+helm install <name> cpd-install-pipeline/cpd-install-pipeline --create-namespace -n <namespace> [--set arch=(ppc64le|s390x)]
 ```
 - `helm_chart` can be found in the [release](https://github.com/schabrolles/cpd-install-pipeline/releases) section.
 - `arch` *optional* value allows pipeline to be adapted for **non x86** cluster (only `ppc64le` or `s390x`) (`arch=""` means `x86` which is the default when not set)
 
 example: 
 ```
-helm install cpd-install https://github.com/schabrolles/cpd-install-pipeline/releases/download/v1.1/cpd-install-pipeline-0.1.1.tgz \
+helm install cpd-install cpd-install-pipeline/cpd-install-pipeline \
 --create-namespace -n cpd-install --set arch=ppc64le
 ```
 This will:
@@ -29,6 +35,32 @@ This will:
    - give the **::“cluster-admin”::** right to the “**pipeline**” service-account of this project
    - create a tekton task “**olm-utils**” based on the official `olm-utils-v2` from IBM (icr.io)
    - create a tekton pipeline to install automatically the cloud pak for data `components` you choose
+
+### 1bis - Adding helm repo to openshift to use Graphical Interface
+
+apply the following yaml to add the helm repo in openshift.
+```
+apiVersion: helm.openshift.io/v1beta1
+kind: HelmChartRepository
+metadata:
+  name: cpd-install-pipeline
+spec:
+  connectionConfig:
+    url: 'https://schabrolles.github.io/cpd-install-pipeline'
+```
+
+- Then create a project: `cp-install`for example.
+- Switch to **developer view** / **add**
+- Select Helm charts and search for cp-install
+
+<img width="1856" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/b15b43fd-3d01-405e-a602-b61a87bab204">
+
+- Click on **Create**
+
+<img width="1491" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/0cc8c07d-0602-473e-81a6-75d8f7144e56">
+
+- Select the Chart version you want.
+- **if you Run on Power or Z, set the arch value before validating**
 
 ### 2a- Starting pipeline with GUI
 
