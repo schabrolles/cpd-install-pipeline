@@ -1,0 +1,49 @@
+Your Pipeline to install CPD on your cluster has been deployed.
+you can use the openshift console to start the installation graphically
+or use "oc create -f" with a PipelineRun yaml file. (example bellow) 
+
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: {{ .Release.Name }}-
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+  - name: OLM_UTILS_IMAGE
+    value: icr.io/cpopen/cpd/olm-utils-v2
+  - name: VERSION
+    value: 4.8.5
+  - name: COMPONENTS
+    value: wml,ws
+  - name: PROJECT_CPD_INST_OPERANDS
+    value: cpd
+  - name: PROJECT_CPD_INST_OPERATORS
+    value: cpd-operators
+  - name: PROJECT_CERT_MANAGER
+    value: ibm-cert-manager
+  - name: PROJECT_LICENSE_SERVICE
+    value: ibm-licensing
+  - name: PROJECT_SCHEDULING_SERVICE
+    value: ibm-scheduler
+  - name: IBM_ENTITLEMENT_KEY
+    value: >>> PUT YOUR IBM ICR KEY HERE <<<
+  - name: STG_CLASS_BLOCK
+    value: ocs-storagecluster-ceph-rbd
+  - name: STG_CLASS_FILE
+    value: ocs-storagecluster-cephfs
+  - name: ENTITLEMENT
+    value: cpd-enterprise
+  - name: SCHEDULER
+    value: "false"
+  - name: PRODUCTION
+    value: "false"
+  - name: ACCEPT_LICENCE
+    value: "true"
+  - name: NO_GPU
+    value: "false"
+  pipelineRef:
+    name: {{ .Release.Name }}
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  timeouts:
+    pipeline: 5h0m0s

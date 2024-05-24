@@ -1,0 +1,6 @@
+# Default values for cpd-install-pipeline.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# specify ppc64le or s390x, empty is x86 (default)
+arch: ""
