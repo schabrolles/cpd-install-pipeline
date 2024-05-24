@@ -16,6 +16,8 @@ After having installed the openshift-pipeline operator, use helm to deploy the t
 ```
 helm install <name> <helm_chart> --create-namespace -n <namespace> [--set arch=(ppc64le|s390x)]
 ```
+- `helm_chart` can be found in the [release](https://github.com/schabrolles/cpd-install-pipeline/releases) section.
+- `arch` *optional* value allows pipeline to be adapted for **non x86** cluster (only ppc64le or s390x) (arch="" means x86 which is the default when not set)
 
 example: 
 ```
