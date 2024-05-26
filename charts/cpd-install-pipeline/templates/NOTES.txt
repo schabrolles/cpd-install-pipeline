@@ -1,7 +1,8 @@
 Your Pipeline to install CPD on your cluster has been deployed.
 you can use the openshift console to start the installation graphically
-or use "oc create -f" with a PipelineRun yaml file. (example bellow) 
+or use "oc create -f" with a PipelineRun yaml file. (example bellow)
 
+```
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
@@ -46,4 +47,5 @@ spec:
   taskRunTemplate:
     serviceAccountName: pipeline
   timeouts:
-    pipeline: 5h0m0s
+    pipeline: 5h0m0`
+```

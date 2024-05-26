@@ -89,6 +89,19 @@ spec:
       value: |-
         add-icr-cred-to-global-pull-secret \
         --entitled_registry_key=$(params.IBM_ENTITLEMENT_KEY)
+
+        if [[ $(oc get mcp -o name | wc -l) -eq 0 ]]; then
+          echo
+          echo "non-MCP cluster detected, activating workaround"
+          oc debug $(oc get node -o name | head -n1) -- chroot /host cat /.docker/config.json > /tmp/config.json
+
+          cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
+          sleep 1
+
+          for n in `oc get node -o name`; do 
+            oc adm copy-to-node --copy=/tmp/config.json.new=/.docker/config.json $n
+          done
+        fi
     taskRef:
       kind: Task
       name: olm-utils
