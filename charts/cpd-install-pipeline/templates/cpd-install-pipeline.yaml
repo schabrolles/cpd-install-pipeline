@@ -67,6 +67,10 @@ spec:
     description: Set true if you want to install without GPU
     name: NO_GPU
     type: string
+  - default: "{{ .Release.Name }}-install-option"
+    description: configMap which contains cloud pak install-options
+    name: CP-INSTALL-OPTIONS
+    type: string
   tasks:
   - name: get-cr-status
     params:
@@ -186,7 +190,8 @@ spec:
         --components=cpd_platform \
         --block_storage_class=$(params.STG_CLASS_BLOCK) \
         --file_storage_class=$(params.STG_CLASS_FILE) \
-        --license_acceptance=$(params.ACCEPT_LICENCE)
+        --license_acceptance=$(params.ACCEPT_LICENCE) \
+        --param-file=/tmp/install-options/install-options.yml
     runAfter:
     - cpd-platform-apply-olm
     taskRef:
@@ -236,7 +241,8 @@ spec:
         --components=$(params.COMPONENTS) \
         --block_storage_class=$(params.STG_CLASS_BLOCK) \
         --file_storage_class=$(params.STG_CLASS_FILE) \
-        --license_acceptance=$(params.ACCEPT_LICENCE)
+        --license_acceptance=$(params.ACCEPT_LICENCE) \
+        --param-file=/tmp/install-options/install-options.yml
     runAfter:
     - cpd-platdorm-apply-cr
     - component-apply-olm

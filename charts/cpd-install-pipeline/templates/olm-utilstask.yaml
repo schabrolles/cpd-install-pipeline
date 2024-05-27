@@ -12,6 +12,10 @@ spec:
   - description: olm command to run
     name: OLM_CMD
     type: string
+  - description: configMap which contains cloud pak install-options
+    name: CP-INSTALL-OPTIONS
+    type: string
+    default: {{ .Release.Name }}-install-option
   steps:
   - image: $(params.OLM_UTILS_IMAGE)
     name: olm-run-cmd
@@ -20,3 +24,11 @@ spec:
       OCP_TOKEN=$(oc whoami -t)
       login-to-ocp --token=${OCP_TOKEN} --server=https://kubernetes.default.svc.cluster.local
       $(params.OLM_CMD)
+    volumeMounts:
+      - name: "install-options"
+        mountPath: /tmp/install-options/install-options.yml
+        subPath: install-options.yml
+  volumes:
+    - name: "install-options"
+      configMap:
+        name: "$(params.CP-INSTALL-OPTIONS)"
