@@ -1,0 +1,223 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-install-option
+  namespace: {{ .Release.Namespace }}
+data:
+  install-options.yml: |
+    ###################################################################################
+    # Parameters description:
+    # https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=data-specifying-installation-options-services
+    ###################################################################################
+    custom_spec:
+      cpd_platform:
+        iamIntegration: true
+      watsonx_governance:
+        installType: all
+        enableFactsheet: true
+        enableOpenpages: true
+        enableOpenscale: true
+    #   openpagesInstanceCR: "op-wxgov-instance"
+    #   openPages:
+    #     databaseType: internal
+    #     dbSecretName: <secret-name>
+    #  wkc:
+    #    enableKnowledgeGraph: False
+    #    enableDataQuality: False
+
+    ################################################################################
+    # watsonx Assistant parameters
+    ################################################################################
+    #watson_assistant_size: Production
+    #watson_assistant_bigpv: false
+    #watson_assistant_analytics_enabled: true
+
+    ################################################################################
+    # Data Replication parameters
+    ################################################################################
+    replication_license_type: <license>
+
+    ################################################################################
+    # IBM Match 360 with Watson parameters
+    ################################################################################
+    #match360_scale_config: small
+    #match360_onboard_timeout: 300
+    #match360_ccs_http_timeout: 2000
+
+    ################################################################################
+    # Analytics Engine powered by Apache Spark parameters
+    ################################################################################
+
+    # ------------------------------------------------------------------------------
+    # Analytics Engine powered by Apache Spark service configuration parameters
+    # ------------------------------------------------------------------------------
+    #analyticsengine_spark_adv_enabled: true
+    #analyticsengine_job_auto_delete_enabled: true
+    #analyticsengine_kernel_cull_time: 30
+    #analyticsengine_image_pull_parallelism: "40"
+    #analyticsengine_image_pull_completions: "20"
+    #analyticsengine_kernel_cleanup_schedule: "*/30 * * * *"
+    #analyticsengine_job_cleanup_schedule: "*/30 * * * *"
+    #analyticsengine_skip_selinux_relabeling: false
+    #analyticsengine_mount_customizations_from_cchome: false
+
+    # ------------------------------------------------------------------------------
+    # Spark runtime configuration parameters
+    # ------------------------------------------------------------------------------
+    #analyticsengine_max_driver_cpu_cores: 5          # The number of CPUs to allocate to the Spark jobs driver. The default is 5.  
+    #analyticsengine_max_executor_cpu_cores: 5        # The number of CPUs to allocate to the Spark jobs executor. The default is 5.
+    #analyticsengine_max_driver_memory: "50g"         # The amount of memory, in gigabytes to allocate to the driver. The default is 50g.
+    #analyticsengine_max_executor_memory: "50g"       # The amount of memory, in gigabytes to allocate to the executor. The default is 50g. 
+    #analyticsengine_max_num_workers: 50              # The number of workers (also called executors) to allocate to spark jobs. The default is 50.
+    #analyticsengine_local_dir_scale_factor: 10       # The number that is used to calculate the temporary disk size on Spark nodes. The formula is temp_disk_size = number_of_cpu * local_dir_scale_factor. The default is 10.
+
+    ################################################################################
+    # Informix parameters
+    ################################################################################
+    #informix_cp4d_edition: EE
+
+    ################################################################################
+    # Watson Discovery parameters
+    ################################################################################
+    #discovery_deployment_type: Production
+
+    ################################################################################
+    # Watson Speech services parameters
+    ################################################################################
+
+    # ------------------------------------------------------------------------------
+    # Watson Speech to Text parameters
+    # ------------------------------------------------------------------------------
+    #watson_speech_enable_stt_async: false
+    #watson_speech_enable_stt_customization: false
+    #watson_speech_enable_stt_runtime: true
+    #watson_speech_stt_scale_config: xsmall
+
+    # ------------------------------------------------------------------------------
+    # Watson Text to Speech parameters
+    # ------------------------------------------------------------------------------
+    #watson_speech_enable_tts_customization: false
+    #watson_speech_enable_tts_runtime: true
+    #watson_speech_tts_scale_config: xsmall
+
+    # ------------------------------------------------------------------------------
+    # Watson Speech to Text models
+    # ------------------------------------------------------------------------------
+    #watson_speech_models: ["enUsBroadbandModel","enUsNarrowbandModel","enUsShortFormNarrowbandModel","enUsTelephony","enUsMultimedia"]
+
+    # ------------------------------------------------------------------------------
+    # Watson Text to Speech enhanced neural voices
+    # ------------------------------------------------------------------------------
+    #watson_speech_voices: ["enUSAllisonV3Voice","enUSLisaV3Voice","enUSMichaelV3Voice"]
+
+    ################################################################################
+    # Voice Gateway parameters
+    ################################################################################
+    voice_gateway_spec:
+    #
+    # ------------------------------------------------------------------------------
+    # Node selector parameters
+    # ------------------------------------------------------------------------------
+    #  nodeSelector:
+    #    key1: value
+    #    key2: value
+    # ------------------------------------------------------------------------------
+    # Toleration parameters
+    # ------------------------------------------------------------------------------
+    #  tolerations:
+    #  - key: "key-name" 
+    #    operator: "operator" 
+    #    value: "value" 
+    #    effect: "effect" 
+    # ------------------------------------------------------------------------------
+    # SSL configuration parameters
+    # ------------------------------------------------------------------------------
+    #  sslConfig:
+    #    disableSslCertValidation: false
+    #    mediaRelay:
+    #      enableSsl: false
+    #      sslClientCACertSecret: client-ca-cert-secret
+    #      enableMutualAuth: false
+    #      sslClientPkcs12FileSecret: ssl-client-pkcs12-file-secret
+    #      sslClientPassphraseSecret: ssl-client-passphrase-secret
+    #    sipOrchestrator:
+    #      enableSslorMutualAuth: false
+    #      sslKeyTrustStoreSecret: trust-store-file-secret
+    #      sslFileType: "JKS"
+    #      sslPassphraseSecret: ssl-passphrase-secret
+    # ------------------------------------------------------------------------------
+    # Port parameters
+    # ------------------------------------------------------------------------------
+    #  ports:
+    #    sipSignalingPortUdp: 5060
+    #    sipSignalingPortTcp: 5060
+    #    sipSignalingPortTls: 5061
+    #    sipOrchestratorHttpPort: 9086
+    #    sipOrchestratorHttpsPort: 9446
+    #    mediaRelayWsPort: 8080
+    #    rtpUdpPortRange: "16384-16394"
+    # ------------------------------------------------------------------------------
+    # Environment variable parameters
+    # ------------------------------------------------------------------------------
+    #  env:
+    #    sipOrchestrator:
+    #      - name: variable-name
+    #        value: "value"
+    #    mediaRelay:
+    #      - name: variable-name
+    #        value: "value"
+    # ------------------------------------------------------------------------------
+    # Storage parameters
+    # ------------------------------------------------------------------------------
+    #  storage:
+    #    recordings:
+    #      enablePersistentRecordings: false
+    #      storageClassName: ""
+    #      size: 15Gi
+    #    logs:
+    #      enablePersistentLogs: false
+    #      storageClassName: ""
+    #      size: 10Gi
+    # ------------------------------------------------------------------------------
+    # Container resource parameters
+    # ------------------------------------------------------------------------------
+    #  resources:
+    #    sipOrchestrator:
+    #      requests:
+    #        cpu: "1.0"
+    #        memory: 1Gi
+    #      limits:
+    #        cpu: "2.0"
+    #        memory: 2Gi
+    #    mediaRelay:
+    #      requests:
+    #        cpu: "1"
+    #        memory: 1Gi
+    #      limits:
+    #        cpu: "4"
+    #        memory: 4Gi
+    #    g729Codec:
+    #      requests:
+    #        cpu: "0.5"
+    #        memory: 0.5Gi
+    #      limits:
+    #        cpu: "1"
+    #        memory: 1Gi
+    # ------------------------------------------------------------------------------
+    # G729 Codec Service parameters
+    # ------------------------------------------------------------------------------
+    #  g729Codec:
+    #    enabled: false
+    #    logLevel: "INFO"
+    #    webSocketServerPort: 9001
+    # ------------------------------------------------------------------------------
+    # Media Resource Control Protocol parameters
+    # ------------------------------------------------------------------------------
+    #  mrcp:
+    #    enableMrcp: false
+    #    unimrcpConfigSecretName: unimrcp-config-secret
+    #    mrcpv2SipPort: 5555
+
+    #override_components_meta:
+    #  watsonx_governance:
+    #    status_max_retries: 240
