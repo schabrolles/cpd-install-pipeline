@@ -24,6 +24,13 @@ data:
     #  wkc:
     #    enableKnowledgeGraph: False
     #    enableDataQuality: False
+    
+    ################################################################################
+    # WKC / Meta
+    ################################################################################
+    #override_components_meta:
+    #  watsonx_governance:
+    #    status_max_retries: 240
 
     ################################################################################
     # watsonx Assistant parameters
@@ -218,6 +225,3 @@ data:
     #    unimrcpConfigSecretName: unimrcp-config-secret
     #    mrcpv2SipPort: 5555
 
-    #override_components_meta:
-    #  watsonx_governance:
-    #    status_max_retries: 240
