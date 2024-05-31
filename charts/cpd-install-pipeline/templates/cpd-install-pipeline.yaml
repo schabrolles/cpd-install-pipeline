@@ -178,7 +178,7 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
-  - name: cpd-platdorm-apply-cr
+  - name: cpd-platform-apply-cr
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
