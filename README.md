@@ -9,7 +9,7 @@ Install automatically IBM Cloudpak for Data using Tekton Pipeline
 - Openshift Pipeline Operator
 - **Cluster can access to registries icr.io and cp.icr.io**
 
-### 1- Configuring cpd-install Tekton Pipeline
+### 1- Configuring cpd-install Tekton Pipeline from the cli
 
 After having installed the openshift-pipeline operator, use helm to deploy the tasks and pipeline in a namespace of your cluster.
 
@@ -62,7 +62,7 @@ spec:
 - Select the Chart version you want.
 - **if you Run on Power or Z, set the arch value before validating**
 
-### 2a- Starting pipeline with GUI
+### 2- Starting pipeline with GUI
 
 If you plan to start the pipeline from the GUI (openshift-console), you must change the default pipeline timeout by using the following command:
 
@@ -94,13 +94,13 @@ The full installation duration is about ~2h
 
 <img width="1380" alt="pipeline-gui3" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/e9e6a549-1eca-4b76-9faf-79c5e4d1840a">
 
-### 2b- Starting pipeline by applying YAML
+### 2bis- Starting pipeline from cli (by applying YAML)
 
 Use `oc create` with the following YAML.
 
 Change the Parameters to fit to your needs:
 
-- You need to provide at least your **IBM Entitlement key**
+- You need to provide at least your **IBM Entitlement key** ([link to get your key](https://myibm.ibm.com/products-services/containerlibrary))
 - You can change the version, name of namespaces or storageclass to use
 - If you are not running a production service, set **production** to **false**
 - if you don’t have GPUs but still want to deploy watsonx, set **NO_GPU** to **true**
