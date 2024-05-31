@@ -84,6 +84,7 @@ This will open a forms to customize your installation.
 
 - You need to provide at least your **IBM Entitlement key**
 - You can change the version, name of namespaces or storageclass to use
+- [list of available component](https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=information-determining-which-components-install#collect-info-components__all-svcs)
 - If you are not running a production service, set **production** to **false**
 - if you don’t have GPUs but still want to deploy watsonx, set **NO_GPU** to **true**
 
