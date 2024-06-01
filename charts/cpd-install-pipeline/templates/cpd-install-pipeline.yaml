@@ -80,6 +80,8 @@ spec:
       value: |-
         get-cr-status \
         --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     runAfter:
     - apply-entitlement
     taskRef:
@@ -89,6 +91,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         add-icr-cred-to-global-pull-secret \
@@ -113,6 +117,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         apply-cluster-components \
@@ -124,6 +130,7 @@ spec:
         --from_oci=true
     runAfter:
     - update-pull-secret
+    - wait4-worker-mcp
     taskRef:
       kind: Task
       name: olm-utils
@@ -132,6 +139,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         authorize-instance-topology \
@@ -146,6 +155,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         setup-instance-topology \
@@ -165,6 +176,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         apply-olm \
@@ -182,6 +195,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         apply-cr \
@@ -202,6 +217,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         apply-olm \
@@ -219,6 +236,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         get-license \
@@ -233,6 +252,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         apply-cr \
@@ -254,6 +275,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         apply-entitlement \
@@ -269,6 +292,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
         get-cpd-instance-details \
@@ -283,6 +308,8 @@ spec:
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |+
         TIME=90
@@ -319,16 +346,18 @@ spec:
       - "yes"
   - name: apply-scheduler
     params:
-    - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
-    - name: OLM_CMD
-      value: |-
-        apply-scheduler \
-        --release=$(params.VERSION) \
-        --license_acceptance=$(params.ACCEPT_LICENCE) \
-        --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
-        --case_download=true \
-        --from_oci=true
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_CMD
+        value: |-
+          apply-scheduler \
+          --release=$(params.VERSION) \
+          --license_acceptance=$(params.ACCEPT_LICENCE) \
+          --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
+          --case_download=true \
+          --from_oci=true
     runAfter:
     - apply-cluster-components
     taskRef:
@@ -344,6 +373,8 @@ spec:
     params:
       - name: OLM_UTILS_IMAGE
         value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
       - name: OLM_CMD
         value: |-
           if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
@@ -371,6 +402,8 @@ spec:
     params:
       - name: OLM_UTILS_IMAGE
         value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
       - name: OLM_CMD
         value: |-
           if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
