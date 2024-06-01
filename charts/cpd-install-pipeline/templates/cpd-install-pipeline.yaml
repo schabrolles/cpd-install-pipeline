@@ -385,3 +385,6 @@ spec:
         value: cpd-install-pipeline-install-option
     runAfter:
       - kubelet-pod-pids-limit
+    taskRef:
+      kind: Task
+      name: olm-utils
