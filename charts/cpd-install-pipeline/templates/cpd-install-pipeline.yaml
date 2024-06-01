@@ -306,7 +306,7 @@ spec:
         oc delete pod -n $(params.PROJECT_CPD_INST_OPERATORS) -l app.kubernetes.io/name=ibm-cpd-watsonx-ai-operator --ignore-not-found
 
     runAfter:
-    - cpd-platdorm-apply-cr
+    - cpd-platform-apply-cr
     - component-apply-olm
     taskRef:
       kind: Task
