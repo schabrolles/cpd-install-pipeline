@@ -1,7 +1,7 @@
 # cpd-install-pipeline
 Install automatically IBM Cloudpak for Data using Tekton Pipeline
 
-<img width="1412" alt="cpd-pipeline" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/a85b1d1f-e93c-41d6-9b2b-dd106035c4ac">
+<img width="1702" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/136d0604-285a-4a58-9751-a8fb1746d4a8">
 
 ## Prerequisite:
 
