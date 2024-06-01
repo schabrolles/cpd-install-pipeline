@@ -340,48 +340,48 @@ spec:
       values:
       - "true"
       - "yes"
-    - name: kubelet-pod-pids-limit
-      params:
-        - name: OLM_UTILS_IMAGE
-          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
-        - name: OLM_CMD
-          value: |-
-            if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-            oc apply -f - << EOF  
-            apiVersion: machineconfiguration.openshift.io/v1  
-            kind: KubeletConfig
-            metadata:  
-              name: cpd-pidslimit-kubeletconfig  
-            spec:  
-              kubeletConfig:  
-                podPidsLimit: 16384  
-              machineConfigPoolSelector:  
-                matchExpressions:  
-                - key: pools.operator.machineconfiguration.openshift.io/worker
-                  operator: Exists  
-            EOF
+  - name: kubelet-pod-pids-limit
+    params:
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      - name: OLM_CMD
+        value: |-
+          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+          oc apply -f - << EOF  
+          apiVersion: machineconfiguration.openshift.io/v1  
+          kind: KubeletConfig
+          metadata:  
+            name: cpd-pidslimit-kubeletconfig  
+          spec:  
+            kubeletConfig:  
+              podPidsLimit: 16384  
+            machineConfigPoolSelector:  
+              matchExpressions:  
+              - key: pools.operator.machineconfiguration.openshift.io/worker
+                operator: Exists  
+          EOF
+            sleep 10
+          fi
+      - name: CP-INSTALL-OPTIONS
+        value: cpd-install-pipeline-install-option
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: wait4-worker-mcp
+    params:
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      - name: OLM_CMD
+        value: |-
+          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+            while [ "$(oc get mcp worker --no-headers | awk '{print $3}')" == "False" ] ; do
+              echo "Wait for mcp to complete"
               sleep 10
-            fi
-        - name: CP-INSTALL-OPTIONS
-          value: cpd-install-pipeline-install-option
-      taskRef:
-        kind: Task
-        name: olm-utils
-    - name: wait4-worker-mcp
-      params:
-        - name: OLM_UTILS_IMAGE
-          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
-        - name: OLM_CMD
-          value: |-
-            if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-              while [ "$(oc get mcp worker --no-headers | awk '{print $3}')" == "False" ] ; do
-                echo "Wait for mcp to complete"
-                sleep 10
-              done
-            else
-              echo "No machine config detected"
-            fi
-        - name: CP-INSTALL-OPTIONS
-          value: cpd-install-pipeline-install-option
-      runAfter:
-        - kubelet-pod-pids-limit
+            done
+          else
+            echo "No machine config detected"
+          fi
+      - name: CP-INSTALL-OPTIONS
+        value: cpd-install-pipeline-install-option
+    runAfter:
+      - kubelet-pod-pids-limit
