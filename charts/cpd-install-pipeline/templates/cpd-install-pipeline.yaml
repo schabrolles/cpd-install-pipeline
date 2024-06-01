@@ -393,8 +393,6 @@ spec:
           EOF
             sleep 10
           fi
-      - name: CP-INSTALL-OPTIONS
-        value: cpd-install-pipeline-install-option
     taskRef:
       kind: Task
       name: olm-utils
@@ -414,8 +412,6 @@ spec:
           else
             echo "No machine config detected"
           fi
-      - name: CP-INSTALL-OPTIONS
-        value: cpd-install-pipeline-install-option
     runAfter:
       - kubelet-pod-pids-limit
     taskRef:
