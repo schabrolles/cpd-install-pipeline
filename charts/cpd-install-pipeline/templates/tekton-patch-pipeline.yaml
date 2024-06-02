@@ -18,7 +18,7 @@ spec:
     - name: enable-enum
       params:
         - name: SCRIPT
-          value: oc patch cm feature-flags -n tekton-pipelines -p '{"data":{"enable-param-enum":"{{ .Values.tektonPatch.activateEnum }}"}}'
+          value: oc patch cm feature-flags -n {{ .Values.tektonPatch.tektonNamespace }} -p '{"data":{"enable-param-enum":"{{ .Values.tektonPatch.activateEnum }}"}}'
         - name: VERSION
           value: latest
       taskRef:

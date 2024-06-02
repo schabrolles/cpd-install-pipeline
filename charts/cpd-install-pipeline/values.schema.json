@@ -23,6 +23,11 @@
           "type": "boolean",
           "description": "Activate the enum feature for pipeline form (alpha)",
           "default": true
+        },
+        "tektonNamespace": {
+          "type": "string",
+          "description": "Name of the Tekton Namespace",
+          "default": "openshift-pipeline"
         }
       }
     }
