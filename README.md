@@ -197,5 +197,5 @@ spec:
 If you prefer you can download the `tkn` cli ([https://docs.openshift.com/container-platform/4.15/cli_reference/tkn_cli/installing-tkn.html#installing-tkn](https://docs.openshift.com/container-platform/4.15/cli_reference/tkn_cli/installing-tkn.html#installing-tkn))
 
 ```plaintext
-tkn pr logs -n cpd-install --follow
+tkn pr logs -n <pipeline_name> --follow
 ```

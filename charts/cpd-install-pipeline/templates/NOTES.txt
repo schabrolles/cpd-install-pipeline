@@ -1,6 +1,12 @@
+
+/!\ RUN THIS TO UPDATE THE DEFAULT TIMEOUT WHEN USING GUI /!\
+```
+oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="300`
+```
+
 Your Pipeline to install CPD on your cluster has been deployed.
-you can use the openshift console to start the installation graphically
-or use "oc create -f" with a PipelineRun yaml file. (example bellow)
+* You can use the openshift console to start the installation graphically
+* or use "oc create -f" with a PipelineRun yaml file. (example bellow)
 
 ```
 apiVersion: tekton.dev/v1
