@@ -1,0 +1,18 @@
+{{- if .Values.tekton-patch.enabled -}}
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: tekton-patch
+  namespace: {{ .Release.Namespace }}
+spec:
+  tasks:
+    - name: default-timeout
+      params:
+        - name: SCRIPT
+          value: oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="{{ .Values.tekton-patch. default-timeout-minutes }}"
+        - name: VERSION
+          value: latest
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+{{- end -}}

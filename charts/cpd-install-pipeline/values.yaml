@@ -4,3 +4,7 @@
 
 # specify ppc64le or s390x, empty is x86 (default)
 arch: ""
+
+tekton-patch:
+  enabled: true
+  default-timeout-minutes: 300
