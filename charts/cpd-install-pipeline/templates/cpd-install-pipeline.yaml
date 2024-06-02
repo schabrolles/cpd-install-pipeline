@@ -148,6 +148,7 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
+    retries: 1
     when:
       - input: $(params.DB2_LIMITED_PRIV)
         operator: in
@@ -177,7 +178,6 @@ spec:
           fi
     runAfter:
       - kubelet-pod-pids-limit
-      - kubelet-db2-limited-priv
     taskRef:
       kind: Task
       name: olm-utils
@@ -225,6 +225,7 @@ spec:
     runAfter:
     - update-pull-secret
     - wait4-worker-mcp
+    - kubelet-db2-limited-priv
     taskRef:
       kind: Task
       name: olm-utils
