@@ -100,8 +100,8 @@ spec:
       kind: Task
       name: olm-utils
   - name: wait4-worker-mcp
-    retries: 2
-    timeout: "1h0m0s"
+    retries: 1
+    timeout: "0h30m0s"
     params:
       - name: OLM_UTILS_IMAGE
         value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
