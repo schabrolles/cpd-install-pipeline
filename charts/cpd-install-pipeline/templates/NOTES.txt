@@ -1,5 +1,8 @@
 
-/!\ RUN THIS TO UPDATE THE DEFAULT TIMEOUT WHEN USING GUI /!\
+/!\ Check if the tekton-patch pipelineRun job run properly /!\
+This should update the default pipeline timeout value from 1h to 5h
+
+You can update this value manually.
 ```
 oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="300`
 ```
