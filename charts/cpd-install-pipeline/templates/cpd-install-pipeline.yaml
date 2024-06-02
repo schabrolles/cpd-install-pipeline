@@ -89,6 +89,7 @@ spec:
       - name: OLM_CMD
         value: |-
           if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+          oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/worker
           oc apply -f - << EOF  
           apiVersion: machineconfiguration.openshift.io/v1  
           kind: KubeletConfig
@@ -102,7 +103,6 @@ spec:
               - key: pools.operator.machineconfiguration.openshift.io/worker
                 operator: Exists  
           EOF
-            sleep 10
           fi
     taskRef:
       kind: Task
@@ -122,8 +122,8 @@ spec:
       - name: OLM_CMD
         value: |-
           if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+            oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/worker
             apply-db2-kubelet
-            sleep 10
           fi
     taskRef:
       kind: Task
@@ -145,6 +145,9 @@ spec:
       - name: OLM_CMD
         value: |-
           if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+            echo "Unpause Machine Config"
+            oc patch --type=merge --patch='{"spec":{"paused":false}}' machineconfigpool/worker
+            sleep 10
             while [ "$(oc get mcp worker --no-headers | awk '{print $3}')" == "False" ] ; do
               echo "Wait for mcp to complete"
               sleep 10
