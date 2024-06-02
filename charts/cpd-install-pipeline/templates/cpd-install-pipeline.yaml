@@ -60,17 +60,21 @@ spec:
       description: 'Set false for non-prod environment '
       name: PRODUCTION
       type: string
-    - default: "true"
-      name: ACCEPT_LICENCE
-      type: string
-    - default: "false"
-      description: Set true if you want to install without GPU
-      name: NO_GPU
+    - name: ACCEPT_LICENCE
+      description: 'Please Accept LICENCE (set true)'
       type: string
     - name: APPLY_MACHINECONFIG
       description: Apply KubeletConfig for cloud-pak-for-data (PidsLimit)
       type: string
       default: "true"
+    - name: DB2_LIMITED_PRIV
+      description: Run DB2 pod in Limited Privilege mode
+      type: string
+      default: "false" 
+    - default: "false"
+      description: Set true if you want to install without GPU
+      name: NO_GPU
+      type: string
     - default: "{{ .Release.Name }}-install-option"
       description: configMap which contains cloud pak install-options
       name: CP-INSTALL-OPTIONS
@@ -109,6 +113,27 @@ spec:
         values:
         - "true"
         - "yes"
+  - name: kubelet-db2-limited-priv
+    params:
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_CMD
+        value: |-
+          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+            apply-db2-kubelet
+            sleep 10
+          fi
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+      - input: $(params.DB2_LIMITED_PRIV)
+        operator: in
+        values:
+        - "true"
+        - "yes"
   - name: wait4-worker-mcp
     retries: 1
     timeout: "0h30m0s"
@@ -129,6 +154,7 @@ spec:
           fi
     runAfter:
       - kubelet-pod-pids-limit
+      - kubelet-db2-limited-priv
     taskRef:
       kind: Task
       name: olm-utils
@@ -261,6 +287,34 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
+  - name: set-db2-limited-privs
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        oc apply -f - <<EOF
+        apiVersion: v1
+        data:
+          DB2U_RUN_WITH_LIMITED_PRIVS: "true"
+        kind: ConfigMap
+        metadata:
+          name: db2u-product-cm
+          namespace: $(params.PROJECT_CPD_INST_OPERATORS)
+        EOF
+    runAfter:
+    - setup-inst-topology
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+      - input: $(params.DB2_LIMITED_PRIV)
+        operator: in
+        values:
+        - "true"
+        - "yes"
   - name: cpd-platform-apply-cr
     params:
     - name: OLM_UTILS_IMAGE

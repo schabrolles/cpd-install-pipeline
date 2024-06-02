@@ -46,10 +46,12 @@ spec:
     value: "false"
   - name: ACCEPT_LICENCE
     value: "true"
-  - name: NO_GPU
-    value: "false"
   - name: APPLY_MACHINECONFIG
     values: "true"
+  - name: DB2_LIMITED_PRIV
+    values: "false"
+  - name: NO_GPU
+    value: "false"
   - name: CP-INSTALL-OPTIONS
     value: {{ .Release.Name }}-install-option
   pipelineRef:
