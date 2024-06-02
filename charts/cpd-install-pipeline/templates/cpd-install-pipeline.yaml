@@ -60,16 +60,16 @@ spec:
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
-      {{ end }} 
-    - default: "true"
-      description: 'Set false for non-prod environment '
-      name: PRODUCTION
+      {{ end }}
+    - name: ACCEPT_LICENCE
+      description: 'Please Accept LICENCE (set true)'
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{ end }} 
-    - name: ACCEPT_LICENCE
-      description: 'Please Accept LICENCE (set true)'
+    - default: "true"
+      description: 'Set false for non-prod environment '
+      name: PRODUCTION
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
