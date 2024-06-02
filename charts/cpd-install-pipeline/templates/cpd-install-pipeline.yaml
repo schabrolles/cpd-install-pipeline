@@ -5,85 +5,120 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   params:
-  - default: icr.io/cpopen/cpd/olm-utils-v2
-    description: olm-utils images
-    name: OLM_UTILS_IMAGE
-    type: string
-  - default: 4.8.5
-    description: cloud-pak for data version
-    name: VERSION
-    type: string
-  - default: wml,ws
-    description: cloud-pak components to install (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...)
-    name: COMPONENTS
-    type: string
-  - default: cpd
-    description: cloud-pak operand namspace
-    name: PROJECT_CPD_INST_OPERANDS
-    type: string
-  - default: cpd-operators
-    description: cloud-pak operand namspace
-    name: PROJECT_CPD_INST_OPERATORS
-    type: string
-  - default: ibm-cert-manager
-    description: cloud-pak ibm-cert-manager namespace
-    name: PROJECT_CERT_MANAGER
-    type: string
-  - default: ibm-licensing
-    description: cloud-pak ibm-licensing namespace
-    name: PROJECT_LICENSE_SERVICE
-    type: string
-  - default: ibm-scheduler
-    description: cloud-pak scheduler namespace
-    name: PROJECT_SCHEDULING_SERVICE
-    type: string
-  - name: IBM_ENTITLEMENT_KEY
-    type: string
-  - default: ocs-storagecluster-ceph-rbd
-    description: StorageClass for Block
-    name: STG_CLASS_BLOCK
-    type: string
-  - default: ocs-storagecluster-cephfs
-    description: StorageClass for Files
-    name: STG_CLASS_FILE
-    type: string
-  - default: cpd-enterprise
-    description: select between (cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data,
-      watsonx-gov-model-management, watsonx-gov-risk-compliance)
-    name: ENTITLEMENT
-    type: string
-  - default: "false"
-    description: Set true if you want to enable ibm-scheduler
-    name: SCHEDULER
-    type: string
-  - default: "true"
-    description: 'Set false for non-prod environment '
-    name: PRODUCTION
-    type: string
-  - default: "true"
-    name: ACCEPT_LICENCE
-    type: string
-  - default: "false"
-    description: Set true if you want to install without GPU
-    name: NO_GPU
-    type: string
-  - default: "{{ .Release.Name }}-install-option"
-    description: configMap which contains cloud pak install-options
-    name: CP-INSTALL-OPTIONS
-    type: string
+    - default: icr.io/cpopen/cpd/olm-utils-v2
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: 4.8.5
+      description: cloud-pak for data version
+      name: VERSION
+      type: string
+    - default: wml,ws
+      description: cloud-pak components to install (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...)
+      name: COMPONENTS
+      type: string
+    - default: cpd
+      description: cloud-pak operand namspace
+      name: PROJECT_CPD_INST_OPERANDS
+      type: string
+    - default: cpd-operators
+      description: cloud-pak operand namspace
+      name: PROJECT_CPD_INST_OPERATORS
+      type: string
+    - default: ibm-cert-manager
+      description: cloud-pak ibm-cert-manager namespace
+      name: PROJECT_CERT_MANAGER
+      type: string
+    - default: ibm-licensing
+      description: cloud-pak ibm-licensing namespace
+      name: PROJECT_LICENSE_SERVICE
+      type: string
+    - default: ibm-scheduler
+      description: cloud-pak scheduler namespace
+      name: PROJECT_SCHEDULING_SERVICE
+      type: string
+    - name: IBM_ENTITLEMENT_KEY
+      type: string
+    - default: ocs-storagecluster-ceph-rbd
+      description: StorageClass for Block
+      name: STG_CLASS_BLOCK
+      type: string
+    - default: ocs-storagecluster-cephfs
+      description: StorageClass for Files
+      name: STG_CLASS_FILE
+      type: string
+    - default: cpd-enterprise
+      description: select between (cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data,
+        watsonx-gov-model-management, watsonx-gov-risk-compliance)
+      name: ENTITLEMENT
+      type: string
+    - default: "false"
+      description: Set true if you want to enable ibm-scheduler
+      name: SCHEDULER
+      type: string
+    - default: "true"
+      description: 'Set false for non-prod environment '
+      name: PRODUCTION
+      type: string
+    - default: "true"
+      name: ACCEPT_LICENCE
+      type: string
+    - default: "false"
+      description: Set true if you want to install without GPU
+      name: NO_GPU
+      type: string
+    - default: "{{ .Release.Name }}-install-option"
+      description: configMap which contains cloud pak install-options
+      name: CP-INSTALL-OPTIONS
+      type: string
   tasks:
-  - name: get-cr-status
+  - name: kubelet-pod-pids-limit
     params:
-    - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
-    - name: OLM_CMD
-      value: |-
-        get-cr-status \
-        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
-    - name: CP-INSTALL-OPTIONS
-      value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_CMD
+        value: |-
+          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+          oc apply -f - << EOF  
+          apiVersion: machineconfiguration.openshift.io/v1  
+          kind: KubeletConfig
+          metadata:  
+            name: cpd-pidslimit-kubeletconfig  
+          spec:  
+            kubeletConfig:  
+              podPidsLimit: 16384  
+            machineConfigPoolSelector:  
+              matchExpressions:  
+              - key: pools.operator.machineconfiguration.openshift.io/worker
+                operator: Exists  
+          EOF
+            sleep 10
+          fi
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: wait4-worker-mcp
+    retries: 2
+    timeout: "1h0m0s"
+    params:
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_CMD
+        value: |-
+          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+            while [ "$(oc get mcp worker --no-headers | awk '{print $3}')" == "False" ] ; do
+              echo "Wait for mcp to complete"
+              sleep 10
+            done
+          else
+            echo "No machine config detected"
+          fi
     runAfter:
-    - apply-entitlement
+      - kubelet-pod-pids-limit
     taskRef:
       kind: Task
       name: olm-utils
@@ -135,6 +170,31 @@ spec:
       kind: Task
       name: olm-utils
     timeout: 1h0m0s
+  - name: apply-scheduler
+    params:
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_CMD
+        value: |-
+          apply-scheduler \
+          --release=$(params.VERSION) \
+          --license_acceptance=$(params.ACCEPT_LICENCE) \
+          --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
+          --case_download=true \
+          --from_oci=true
+    runAfter:
+    - apply-cluster-components
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(params.SCHEDULER)
+      operator: in
+      values:
+      - "true"
+      - "yes"
   - name: authorize-inst-topology
     params:
     - name: OLM_UTILS_IMAGE
@@ -271,39 +331,6 @@ spec:
       kind: Task
       name: olm-utils
     timeout: 3h0m0s
-  - name: apply-entitlement
-    params:
-    - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
-    - name: CP-INSTALL-OPTIONS
-      value: $(params.CP-INSTALL-OPTIONS)
-    - name: OLM_CMD
-      value: |-
-        apply-entitlement \
-        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
-        --entitlement=$(params.ENTITLEMENT) --production=$(params.PRODUCTION) --apply_branding=true
-    runAfter:
-    - no-gpu-patch
-    - components-apply-cr
-    taskRef:
-      kind: Task
-      name: olm-utils
-  - name: instance-details
-    params:
-    - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
-    - name: CP-INSTALL-OPTIONS
-      value: $(params.CP-INSTALL-OPTIONS)
-    - name: OLM_CMD
-      value: |-
-        get-cpd-instance-details \
-        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
-        --get_admin_initial_credentials=true
-    runAfter:
-    - apply-entitlement
-    taskRef:
-      kind: Task
-      name: olm-utils
   - name: no-gpu-patch
     params:
     - name: OLM_UTILS_IMAGE
@@ -344,76 +371,51 @@ spec:
       values:
       - "true"
       - "yes"
-  - name: apply-scheduler
+  - name: apply-entitlement
     params:
-      - name: OLM_UTILS_IMAGE
-        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
-      - name: CP-INSTALL-OPTIONS
-        value: $(params.CP-INSTALL-OPTIONS)
-      - name: OLM_CMD
-        value: |-
-          apply-scheduler \
-          --release=$(params.VERSION) \
-          --license_acceptance=$(params.ACCEPT_LICENCE) \
-          --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
-          --case_download=true \
-          --from_oci=true
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        apply-entitlement \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --entitlement=$(params.ENTITLEMENT) --production=$(params.PRODUCTION) --apply_branding=true
     runAfter:
-    - apply-cluster-components
+    - no-gpu-patch
+    - components-apply-cr
     taskRef:
       kind: Task
       name: olm-utils
-    when:
-    - input: $(params.SCHEDULER)
-      operator: in
-      values:
-      - "true"
-      - "yes"
-  - name: kubelet-pod-pids-limit
+  - name: instance-details
     params:
-      - name: OLM_UTILS_IMAGE
-        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
-      - name: CP-INSTALL-OPTIONS
-        value: $(params.CP-INSTALL-OPTIONS)
-      - name: OLM_CMD
-        value: |-
-          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-          oc apply -f - << EOF  
-          apiVersion: machineconfiguration.openshift.io/v1  
-          kind: KubeletConfig
-          metadata:  
-            name: cpd-pidslimit-kubeletconfig  
-          spec:  
-            kubeletConfig:  
-              podPidsLimit: 16384  
-            machineConfigPoolSelector:  
-              matchExpressions:  
-              - key: pools.operator.machineconfiguration.openshift.io/worker
-                operator: Exists  
-          EOF
-            sleep 10
-          fi
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        get-cpd-instance-details \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --get_admin_initial_credentials=true
+    runAfter:
+    - apply-entitlement
     taskRef:
       kind: Task
       name: olm-utils
-  - name: wait4-worker-mcp
+  - name: get-cr-status
     params:
-      - name: OLM_UTILS_IMAGE
-        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
-      - name: CP-INSTALL-OPTIONS
-        value: $(params.CP-INSTALL-OPTIONS)
-      - name: OLM_CMD
-        value: |-
-          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-            while [ "$(oc get mcp worker --no-headers | awk '{print $3}')" == "False" ] ; do
-              echo "Wait for mcp to complete"
-              sleep 10
-            done
-          else
-            echo "No machine config detected"
-          fi
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        get-cr-status \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
     runAfter:
-      - kubelet-pod-pids-limit
+    - apply-entitlement
     taskRef:
       kind: Task
       name: olm-utils
