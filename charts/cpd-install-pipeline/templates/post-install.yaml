@@ -1,4 +1,4 @@
-{{- if .Values.tekton-patch.enabled -}}
+{{- if .Values.tektonPatch.enabled -}}
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
@@ -9,7 +9,7 @@ spec:
     - name: default-timeout
       params:
         - name: SCRIPT
-          value: oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="{{ .Values.tekton-patch. default-timeout-minutes }}"
+          value: oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="{{ .Values.tektonPatch.defaultTimeoutMinutes }}"
         - name: VERSION
           value: latest
       taskRef:
