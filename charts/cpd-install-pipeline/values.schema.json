@@ -27,7 +27,7 @@
         "tektonNamespace": {
           "type": "string",
           "description": "Name of the Tekton Namespace",
-          "default": "openshift-pipeline"
+          "default": "openshift-pipelines"
         }
       }
     }
