@@ -22,7 +22,7 @@ spec:
       name: PROJECT_CPD_INST_OPERANDS
       type: string
     - default: cpd-operators
-      description: cloud-pak operand namspace
+      description: cloud-pak operators namspace
       name: PROJECT_CPD_INST_OPERATORS
       type: string
     - default: ibm-cert-manager

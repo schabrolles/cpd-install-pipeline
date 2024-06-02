@@ -173,6 +173,8 @@ spec:
     value: "false"
   - name: APPLY_MACHINECONFIG
     values: "true"
+  - name: DB2_LIMITED_PRIV
+    values: "false"
   - name: CP-INSTALL-OPTIONS
     value: cpd-install-pipeline-install-option
   pipelineRef:
