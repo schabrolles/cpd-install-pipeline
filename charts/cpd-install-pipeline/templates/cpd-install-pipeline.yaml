@@ -123,6 +123,7 @@ spec:
               - key: pools.operator.machineconfiguration.openshift.io/worker
                 operator: Exists  
           EOF
+          sleep 10
           fi
     taskRef:
       kind: Task
@@ -134,6 +135,7 @@ spec:
         - "true"
         - "yes"
   - name: kubelet-db2-limited-priv
+    retries: 1
     params:
       - name: OLM_UTILS_IMAGE
         value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
@@ -142,13 +144,11 @@ spec:
       - name: OLM_CMD
         value: |-
           if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-            oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/worker
             apply-db2-kubelet
           fi
     taskRef:
       kind: Task
       name: olm-utils
-    retries: 1
     when:
       - input: $(params.DB2_LIMITED_PRIV)
         operator: in
