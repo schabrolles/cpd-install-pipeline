@@ -14,7 +14,7 @@ spec:
       name: VERSION
       type: string
     - default: wml,ws
-      description: cloud-pak components to install (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...)
+      description: "cloud-pak components to install (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...)"
       name: COMPONENTS
       type: string
     - default: cpd
@@ -48,33 +48,53 @@ spec:
       name: STG_CLASS_FILE
       type: string
     - default: cpd-enterprise
-      description: "Entitlement, choose between: cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data,
-        watsonx-gov-model-management, watsonx-gov-risk-compliance"
+      description: "Entitlement, choose between: cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data, watsonx-gov-model-management, watsonx-gov-risk-compliance"
       name: ENTITLEMENT
       type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["cpd-enterprise", "cpd-standard", "watsonx-ai", "watsonx-data", "watsonx-gov-model-management", "watsonx-gov-risk-compliance"]
+      {{ end }}
     - default: "false"
       description: Set true if you want to enable ibm-scheduler
       name: SCHEDULER
       type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
     - default: "true"
       description: 'Set false for non-prod environment '
       name: PRODUCTION
       type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
     - name: ACCEPT_LICENCE
       description: 'Please Accept LICENCE (set true)'
       type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
     - name: APPLY_MACHINECONFIG
       description: Apply KubeletConfig for cloud-pak-for-data (PidsLimit)
       type: string
       default: "true"
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
     - name: DB2_LIMITED_PRIV
       description: Run DB2 pod in Limited Privilege mode
       type: string
-      default: "false" 
+      default: "false"
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
     - default: "false"
       description: Set true if you want to install without GPU
       name: NO_GPU
       type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
     - default: "{{ .Release.Name }}-install-option"
       description: configMap which contains cloud pak install-options
       name: CP-INSTALL-OPTIONS

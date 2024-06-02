@@ -13,11 +13,16 @@
           "description": "Enable patching of openshift-pipeline for cpd-install-pipeline (default-timeout-minutes,enum)",
           "default": true
         },
-        "default-timeout-minutes": {
+        "defaultTimeoutMinutes": {
           "type": "number",
           "description": "default timeout in minutes for a pipeline",
           "minimum": 60,
           "default": 300
+        },
+        "activateEnum": {
+          "type": "boolean",
+          "description": "Activate the enum feature for pipeline form (alpha)",
+          "default": true
         }
       }
     }

@@ -8,3 +8,4 @@ arch: "x86"
 tektonPatch:
   enabled: true
   defaultTimeoutMinutes: 300
+  activateEnum: true

@@ -15,4 +15,13 @@ spec:
       taskRef:
         kind: ClusterTask
         name: openshift-client
+    - name: enable-enum
+      params:
+        - name: SCRIPT
+          value: oc patch cm feature-flags -n tekton-pipelines -p '{"data":{"enable-param-enum":"{{ .Values.tektonPatch.activateEnum }}"}}'
+        - name: VERSION
+          value: latest
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
 {{- end -}}
