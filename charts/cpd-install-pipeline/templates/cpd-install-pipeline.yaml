@@ -135,7 +135,7 @@ spec:
         - "true"
         - "yes"
   - name: kubelet-db2-limited-priv
-    retries: 1
+    retries: 2
     params:
       - name: OLM_UTILS_IMAGE
         value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
@@ -156,7 +156,7 @@ spec:
         - "true"
         - "yes"
   - name: wait4-worker-mcp
-    retries: 1
+    retries: 2
     timeout: "0h30m0s"
     params:
       - name: OLM_UTILS_IMAGE
