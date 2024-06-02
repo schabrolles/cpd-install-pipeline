@@ -4,7 +4,8 @@ description: Tekton Pipeline to automate IBM Cloud Pak for Data Deployment
 #icon: https://techd.com/wp-content/uploads/2020/03/Data-icon.jpg
 icon: https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/35b97ace-1a21-4673-8271-b93ef354ddcb
 home: https://github.com/schabrolles/cpd-install-pipeline
-sources: https://github.com/schabrolles/cpd-install-pipeline
+sources: 
+  - https://github.com/schabrolles/cpd-install-pipeline
 maintainers:
   - name: Sebastien Chabrolles
     email: s.chabrolles@fr.ibm.com
