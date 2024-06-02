@@ -1,4 +1,5 @@
-# cpd-install-pipeline
+# cpd-install-pipeline ![Data-icon](https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/35b97ace-1a21-4673-8271-b93ef354ddcb)
+
 Install automatically IBM Cloudpak for Data using Tekton Pipeline
 
 <img width="1702" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/136d0604-285a-4a58-9751-a8fb1746d4a8">
@@ -107,20 +108,34 @@ The full installation duration is about ~2h
 
 ### 2bis- Starting pipeline from cli (by applying YAML)
 
-Use `oc create` with the following YAML.
+It is possible to apply a PipelineRun YAML file to start the pipeline and set your variables.
+An example of this yaml file is availble in the NOTES of this helm Chart. it can be print with the `helm status <release_name>` command.
 
-Change the Parameters to fit to your needs:
+- Use `helm list` in your namespace to get the release name:
+```
+$ helm list
+NAME                	NAMESPACE  	REVISION	UPDATED                                	STATUS  	CHART                     	APP VERSION
+cpd-install-pipeline	cpd-install	5       	2024-06-02 06:54:12.979372883 +0000 UTC	deployed	cpd-install-pipeline-1.4.3	1.4.3
+```
 
-- You need to provide at least your **IBM Entitlement key** ([link to get your key](https://myibm.ibm.com/products-services/containerlibrary))
-- You can change the version, name of namespaces or storageclass to use
-- If you are not running a production service, set **production** to **false**
-- if you don’t have GPUs but still want to deploy watsonx, set **NO_GPU** to **true**
+- Run the `helm status ...`
+```
+helm status cpd-install-pipeline
+NAME: cpd-install-pipeline
+LAST DEPLOYED: Sun Jun  2 06:54:12 2024
+NAMESPACE: cpd-install
+STATUS: deployed
+REVISION: 5
+TEST SUITE: None
+NOTES:
+Your Pipeline to install CPD on your cluster has been deployed.
+you can use the openshift console to start the installation graphically
+or use "oc create -f" with a PipelineRun yaml file. (example bellow)
 
-```yaml
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  generateName: cpd-install-
+  generateName: cpd-install-pipeline-
   namespace: cpd-install
 spec:
   params:
@@ -129,7 +144,7 @@ spec:
   - name: VERSION
     value: 4.8.5
   - name: COMPONENTS
-    value: watsonx_ai
+    value: wml,ws
   - name: PROJECT_CPD_INST_OPERANDS
     value: cpd
   - name: PROJECT_CPD_INST_OPERATORS
@@ -147,7 +162,7 @@ spec:
   - name: STG_CLASS_FILE
     value: ocs-storagecluster-cephfs
   - name: ENTITLEMENT
-    value: watsonx-ai
+    value: cpd-enterprise
   - name: SCHEDULER
     value: "false"
   - name: PRODUCTION
@@ -156,15 +171,29 @@ spec:
     value: "true"
   - name: NO_GPU
     value: "false"
+  - name: APPLY_MACHINECONFIG
+    values: "true"
+  - name: CP-INSTALL-OPTIONS
+    value: cpd-install-pipeline-install-option
   pipelineRef:
-    name: cpd-install
+    name: cpd-install-pipeline
   taskRunTemplate:
     serviceAccountName: pipeline
   timeouts:
-    pipeline: 5h0m0s
+    pipeline: 5h0m0`
 ```
 
-You can use openshift console to follow the pipeline.
+- Use this sample (starting from apiversion) to create a yaml file.
+
+- Change the Parameters to fit to your needs:
+
+  - You need to provide at least your **IBM Entitlement key** ([link to get your key](https://myibm.ibm.com/products-services/containerlibrary))
+  - You can change the version, name of namespaces or storageclass to use
+  - If you are not running a production service, set **production** to **false**
+  - if you don’t have GPUs but still want to deploy watsonx, set **NO_GPU** to **true**
+
+
+- You can use openshift console to follow the pipeline.
 If you prefer you can download the `tkn` cli ([https://docs.openshift.com/container-platform/4.15/cli_reference/tkn_cli/installing-tkn.html#installing-tkn](https://docs.openshift.com/container-platform/4.15/cli_reference/tkn_cli/installing-tkn.html#installing-tkn))
 
 ```plaintext
