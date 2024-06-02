@@ -1,13 +1,24 @@
 # cpd-install-pipeline
 Install automatically IBM Cloudpak for Data using Tekton Pipeline
 
-<img width="1412" alt="cpd-pipeline" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/a85b1d1f-e93c-41d6-9b2b-dd106035c4ac">
+<img width="1702" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/136d0604-285a-4a58-9751-a8fb1746d4a8">
 
 ## Prerequisite:
 
 - Openshift Cluster > 4.12
 - Openshift Pipeline Operator
 - **Cluster can access to registries icr.io and cp.icr.io**
+
+## Table of Content:
+
+- **Installation**
+   - cli based: [Using helm cli](#1--Configuring-cpd-install-Tekton-Pipeline-from-the-cli)
+   - GUI based: [Using openshift web-console](#1bis---Adding-helm-repo-to-openshift-to-use-Graphical-Interface)
+- **Starting Pipeline**
+   - GUI based: [Using openshift pipeline graphical interface](#2--Starting-pipeline-with-GUI)
+   - cli based: [applying pipelineRun yaml file](2bis--Starting-pipeline-from-cli-(by-applying-YAML))
+ 
+---
 
 ### 1- Configuring cpd-install Tekton Pipeline from the cli
 

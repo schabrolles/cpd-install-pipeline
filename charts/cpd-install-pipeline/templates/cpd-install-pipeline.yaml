@@ -48,8 +48,8 @@ spec:
       name: STG_CLASS_FILE
       type: string
     - default: cpd-enterprise
-      description: select between (cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data,
-        watsonx-gov-model-management, watsonx-gov-risk-compliance)
+      description: "Entitlement, choose between: cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data,
+        watsonx-gov-model-management, watsonx-gov-risk-compliance"
       name: ENTITLEMENT
       type: string
     - default: "false"
@@ -67,6 +67,10 @@ spec:
       description: Set true if you want to install without GPU
       name: NO_GPU
       type: string
+    - name: APPLY_MACHINECONFIG
+      description: Apply KubeletConfig for cloud-pak-for-data (PidsLimit)
+      type: string
+      default: "true"
     - default: "{{ .Release.Name }}-install-option"
       description: configMap which contains cloud pak install-options
       name: CP-INSTALL-OPTIONS
@@ -99,6 +103,12 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
+    when:
+      - input: $(params.APPLY_MACHINECONFIG)
+        operator: in
+        values:
+        - "true"
+        - "yes"
   - name: wait4-worker-mcp
     retries: 1
     timeout: "0h30m0s"

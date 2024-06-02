@@ -42,6 +42,8 @@ spec:
     value: "true"
   - name: NO_GPU
     value: "false"
+  - name: APPLY_MACHINECONFIG
+    values: "true"
   - name: CP-INSTALL-OPTIONS
     value: {{ .Release.Name }}-install-option
   pipelineRef:
