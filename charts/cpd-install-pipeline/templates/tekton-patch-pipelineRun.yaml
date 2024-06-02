@@ -1,0 +1,10 @@
+{{- if .Values.tektonPatch.enabled -}}
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: tekton-patch
+  namespace: {{ .Release.Namespace }}
+spec:
+  pipelineRef:
+    name: tekton-patch
+{{- end -}}

@@ -2,19 +2,22 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "properties": {
     "arch": {
-      "enum": ["ppc64le", "s390x", ""],
-      "description": "(optional) [ppc64le|s390x] allows pipeline to be adapted for non x86 cluster (empty means x86 which is the default)"
+      "enum": ["x86", "ppc64le", "s390x"],
+      "description": "(optional) [ppc64le|s390x] allows pipeline to be adapted for non x86 cluster (empty means x86 which is the default)",
+      "default": "x86"
     },
     "tekton-patch": {
       "properties": {
         "enabled": {
           "type": "boolean",
-          "description": "Enable patching of openshift-pipeline for cpd-install-pipeline (default-timeout-minutes,enum)"
+          "description": "Enable patching of openshift-pipeline for cpd-install-pipeline (default-timeout-minutes,enum)",
+          "default": true
         },
         "default-timeout-minutes": {
           "type": "number",
           "description": "default timeout in minutes for a pipeline",
-          "minimum": 60
+          "minimum": 60,
+          "default": 300
         }
       }
     }

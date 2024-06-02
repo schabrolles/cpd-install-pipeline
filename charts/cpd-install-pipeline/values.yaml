@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 # specify ppc64le or s390x, empty is x86 (default)
-arch: ""
+arch: "x86"
 
 tektonPatch:
   enabled: true

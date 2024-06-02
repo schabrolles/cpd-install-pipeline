@@ -83,7 +83,7 @@ spec:
   - name: kubelet-pod-pids-limit
     params:
       - name: OLM_UTILS_IMAGE
-        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
       - name: CP-INSTALL-OPTIONS
         value: $(params.CP-INSTALL-OPTIONS)
       - name: OLM_CMD
@@ -116,7 +116,7 @@ spec:
   - name: kubelet-db2-limited-priv
     params:
       - name: OLM_UTILS_IMAGE
-        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
       - name: CP-INSTALL-OPTIONS
         value: $(params.CP-INSTALL-OPTIONS)
       - name: OLM_CMD
@@ -139,7 +139,7 @@ spec:
     timeout: "0h30m0s"
     params:
       - name: OLM_UTILS_IMAGE
-        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
       - name: CP-INSTALL-OPTIONS
         value: $(params.CP-INSTALL-OPTIONS)
       - name: OLM_CMD
@@ -164,7 +164,7 @@ spec:
   - name: update-pull-secret
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -190,7 +190,7 @@ spec:
   - name: apply-cluster-components
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -212,7 +212,7 @@ spec:
   - name: apply-scheduler
     params:
       - name: OLM_UTILS_IMAGE
-        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
       - name: CP-INSTALL-OPTIONS
         value: $(params.CP-INSTALL-OPTIONS)
       - name: OLM_CMD
@@ -237,7 +237,7 @@ spec:
   - name: authorize-inst-topology
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -253,7 +253,7 @@ spec:
   - name: setup-inst-topology
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -274,7 +274,7 @@ spec:
   - name: cpd-platform-apply-olm
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -293,7 +293,7 @@ spec:
   - name: set-db2-limited-privs
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -321,7 +321,7 @@ spec:
   - name: cpd-platform-apply-cr
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -344,7 +344,7 @@ spec:
   - name: component-apply-olm
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -364,7 +364,7 @@ spec:
   - name: get-license
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -380,7 +380,7 @@ spec:
   - name: components-apply-cr
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -403,7 +403,7 @@ spec:
   - name: no-gpu-patch
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -443,7 +443,7 @@ spec:
   - name: apply-entitlement
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -460,7 +460,7 @@ spec:
   - name: instance-details
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
@@ -476,7 +476,7 @@ spec:
   - name: get-cr-status
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: OLM_CMD
       value: |-
         get-cr-status \
