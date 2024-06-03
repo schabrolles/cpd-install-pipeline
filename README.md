@@ -19,8 +19,9 @@ Install automatically IBM Cloudpak for Data using Tekton Pipeline
    - GUI based: [Using openshift pipeline graphical interface](#2--Starting-pipeline-with-GUI)
    - cli based: [applying pipelineRun yaml file](2bis--Starting-pipeline-from-cli-(by-applying-YAML))
  
----
 ## Installation
+* 1- [Using helm cli](#1--Configuring-cpd-install-Tekton-Pipeline-from-the-cli) (cli based)
+* 1bis- [Using openshift web-console](#1bis---Adding-helm-repo-to-openshift-to-use-Graphical-Interface) (GUI based)
 
 ### 1- Configuring cpd-install Tekton Pipeline from the cli
 
@@ -76,6 +77,8 @@ spec:
 - **if you Run on Power or Z, set the arch value before validating**
 
 ## Starting the pipeline
+* 2- [Using openshift pipeline graphical interface](#2--Starting-pipeline-with-GUI) (GUI based)
+* 2bis- [applying pipelineRun yaml file](2bis--Starting-pipeline-from-cli-(by-applying-YAML)) (cli based)
 
 ### 2- Starting pipeline with GUI
 
