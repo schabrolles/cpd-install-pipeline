@@ -57,33 +57,33 @@ spec:
     - default: "false"
       description: Set true if you want to enable ibm-scheduler
       name: SCHEDULER
-      type: string
+      type: "boolean"
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{ end }}
     - name: ACCEPT_LICENCE
       description: 'Please Accept LICENCE (set true)'
-      type: string
+      type: "boolean"
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{ end }} 
     - default: "true"
       description: 'Set false for non-prod environment '
       name: PRODUCTION
-      type: string
+      type: "boolean"
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{ end }} 
     - name: APPLY_MACHINECONFIG
       description: Apply KubeletConfig for cloud-pak-for-data (PidsLimit)
-      type: string
+      type: "boolean"
       default: "true"
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{ end }} 
     - name: DB2_LIMITED_PRIV
       description: Run DB2 pod in Limited Privilege mode
-      type: string
+      type: "boolean"
       default: "false"
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
@@ -91,10 +91,14 @@ spec:
     - default: "true"
       description: Set true to download CASE as OCI, false to get CASE from Github.
       name: CASE_FROM_OCI
-      type: string
+      type: "boolean"
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
-      {{ end }}  
+      {{ end }}
+    - default: "icr.io/cpopen"
+      description: if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages 
+      name: OCI_LOCATION
+      type: "string"
     - default: "false"
       description: (for watsonx.ai) Set true to preform the installation without GPU.
       name: NO_GPU
@@ -108,6 +112,7 @@ spec:
       type: string
   tasks:
   - name: kubelet-pod-pids-limit
+    retries: 10
     params:
       - name: OLM_UTILS_IMAGE
         value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
@@ -192,7 +197,8 @@ spec:
         --cert_manager_ns=$(params.PROJECT_CERT_MANAGER) \
         --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
         --case_download=true \
-        --from_oci=$(params.CASE_FROM_OCI)
+        --from_oci=$(params.CASE_FROM_OCI) \
+        --oci_location=$(params.OCI_LOCATION)
     runAfter:
     - update-pull-secret
     - kubelet-pod-pids-limit
@@ -214,7 +220,8 @@ spec:
           --license_acceptance=$(params.ACCEPT_LICENCE) \
           --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
           --case_download=true \
-          --from_oci=$(params.CASE_FROM_OCI)
+          --from_oci=$(params.CASE_FROM_OCI) \
+          --oci_location=$(params.OCI_LOCATION)
     runAfter:
     - apply-cluster-components
     taskRef:
@@ -257,7 +264,8 @@ spec:
         --license_acceptance=$(params.ACCEPT_LICENCE) \
         --block_storage_class=$(params.STG_CLASS_BLOCK) \
         --case_download=true \
-        --from_oci=$(params.CASE_FROM_OCI)
+        --from_oci=$(params.CASE_FROM_OCI) \
+        --oci_location=$(params.OCI_LOCATION)
     runAfter:
     - authorize-inst-topology
     taskRef:
@@ -276,7 +284,8 @@ spec:
         --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
         --components=cpd_platform \
         --case_download=true \
-        --from_oci=$(params.CASE_FROM_OCI)
+        --from_oci=$(params.CASE_FROM_OCI) \
+        --oci_location=$(params.OCI_LOCATION)
     runAfter:
     - setup-inst-topology
     taskRef:
@@ -346,7 +355,8 @@ spec:
         --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
         --components=$(params.COMPONENTS) \
         --case_download=true \
-        --from_oci=$(params.CASE_FROM_OCI)
+        --from_oci=$(params.CASE_FROM_OCI) \
+        --oci_location=$(params.OCI_LOCATION)
     runAfter:
     - cpd-platform-apply-olm
     - set-db2-limited-privs
