@@ -5,13 +5,20 @@ metadata:
   name: tekton-patch
   namespace: {{ .Release.Namespace }}
 spec:
+  params:
+    - default: icr.io/cpopen/cpd/olm-utils-v2
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: 4.8.5
+      description: olm-utils-version
+      name: VERSION
+      type: string
   tasks:
     - name: default-timeout
       params:
         - name: OLM_UTILS_IMAGE
           value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
-        - name: CP-INSTALL-OPTIONS
-          value: $(params.CP-INSTALL-OPTIONS)
         - name: OLM_CMD
           value: oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="{{ .Values.tektonPatch.defaultTimeoutMinutes }}"
       taskRef:
@@ -21,8 +28,6 @@ spec:
       params:
         - name: OLM_UTILS_IMAGE
           value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
-        - name: CP-INSTALL-OPTIONS
-          value: $(params.CP-INSTALL-OPTIONS)
         - name: OLM_CMD
           value: oc patch cm feature-flags -n {{ .Values.tektonPatch.tektonNamespace }} -p '{"data":{"enable-param-enum":"{{ .Values.tektonPatch.activateEnum }}"}}'
       taskRef:

@@ -7,4 +7,9 @@ metadata:
 spec:
   pipelineRef:
     name: tekton-patch
+  params:
+    - name: OLM_UTILS_IMAGE
+      value: icr.io/cpopen/cpd/olm-utils-v2
+    - name: VERSION
+      value: 4.8.5
 {{- end -}}

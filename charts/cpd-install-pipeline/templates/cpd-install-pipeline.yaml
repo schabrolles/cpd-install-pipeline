@@ -95,7 +95,7 @@ spec:
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{ end }}
-    - default: "icr.io/cpopen"
+    - default: "cp.icr.io/cpopen"
       description: if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages 
       name: OCI_LOCATION
       type: "string"
