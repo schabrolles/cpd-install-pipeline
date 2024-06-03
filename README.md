@@ -82,11 +82,13 @@ spec:
 
 ### 2- Starting pipeline with GUI
 
-If you plan to start the pipeline from the GUI (openshift-console), you must change the default pipeline timeout by using the following command:
-
-```other
-oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="300"
-```
+>#### Note:
+>* After having deploy the helm charts, verify that the `tekton-patch` pipeline ran successfuly.  
+>* This `tekton-patch` pipeline update the `openshift-pipelines` config to increase the default value from 1h to 5h (cp4d installation duration is 2h minimum).  
+>* If you want to update this parameter manually or if this pipeline failed you can change update this pipeline timeout parameter by using the following command:  
+>```other
+>oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="300"
+>```
 
 From the openshift console, enter in the project `cpd-install` and select the tab “pipeline" from the menu on the left.
 
