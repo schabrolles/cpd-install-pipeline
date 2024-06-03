@@ -87,9 +87,16 @@ spec:
       default: "false"
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
-      {{ end }} 
+      {{ end }}
+    - default: "true"
+      description: Set true to download CASE as OCI, false to get CASE from Github.
+      name: CASE_FROM_OCI
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }}  
     - default: "false"
-      description: Set true if you want to install without GPU
+      description: (for watsonx.ai) Set true to preform the installation without GPU.
       name: NO_GPU
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
@@ -109,21 +116,9 @@ spec:
       - name: OLM_CMD
         value: |-
           if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-          oc patch --type=merge --patch='{"spec":{"paused":true}}' machineconfigpool/worker
-          oc apply -f - << EOF  
-          apiVersion: machineconfiguration.openshift.io/v1  
-          kind: KubeletConfig
-          metadata:  
-            name: cpd-pidslimit-kubeletconfig  
-          spec:  
-            kubeletConfig:  
-              podPidsLimit: 16384  
-            machineConfigPoolSelector:  
-              matchExpressions:  
-              - key: pools.operator.machineconfiguration.openshift.io/worker
-                operator: Exists  
-          EOF
-          sleep 10
+            apply-pid-limit
+          else
+            echo "No MachineConfig Found"
           fi
     taskRef:
       kind: Task
@@ -145,6 +140,8 @@ spec:
         value: |-
           if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
             apply-db2-kubelet
+          else
+            echo "No MachineConfig Found"
           fi
     taskRef:
       kind: Task
@@ -155,32 +152,6 @@ spec:
         values:
         - "true"
         - "yes"
-  - name: wait4-worker-mcp
-    retries: 10
-    timeout: "0h30m0s"
-    params:
-      - name: OLM_UTILS_IMAGE
-        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
-      - name: CP-INSTALL-OPTIONS
-        value: $(params.CP-INSTALL-OPTIONS)
-      - name: OLM_CMD
-        value: |-
-          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-            echo "Unpause Machine Config"
-            oc patch --type=merge --patch='{"spec":{"paused":false}}' machineconfigpool/worker
-            sleep 10
-            while [ "$(oc get mcp worker --no-headers | awk '{print $3}')" == "False" ] ; do
-              echo "Wait for mcp to complete"
-              sleep 10
-            done
-          else
-            echo "No machine config detected"
-          fi
-    runAfter:
-      - kubelet-pod-pids-limit
-    taskRef:
-      kind: Task
-      name: olm-utils
   - name: update-pull-secret
     params:
     - name: OLM_UTILS_IMAGE
@@ -221,10 +192,10 @@ spec:
         --cert_manager_ns=$(params.PROJECT_CERT_MANAGER) \
         --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
         --case_download=true \
-        --from_oci=true
+        --from_oci=$(params.CASE_FROM_OCI)
     runAfter:
     - update-pull-secret
-    - wait4-worker-mcp
+    - kubelet-pod-pids-limit
     - kubelet-db2-limited-priv
     taskRef:
       kind: Task
@@ -243,7 +214,7 @@ spec:
           --license_acceptance=$(params.ACCEPT_LICENCE) \
           --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
           --case_download=true \
-          --from_oci=true
+          --from_oci=$(params.CASE_FROM_OCI)
     runAfter:
     - apply-cluster-components
     taskRef:
@@ -286,7 +257,7 @@ spec:
         --license_acceptance=$(params.ACCEPT_LICENCE) \
         --block_storage_class=$(params.STG_CLASS_BLOCK) \
         --case_download=true \
-        --from_oci=true
+        --from_oci=$(params.CASE_FROM_OCI)
     runAfter:
     - authorize-inst-topology
     taskRef:
@@ -305,7 +276,7 @@ spec:
         --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
         --components=cpd_platform \
         --case_download=true \
-        --from_oci=true
+        --from_oci=$(params.CASE_FROM_OCI)
     runAfter:
     - setup-inst-topology
     taskRef:
@@ -375,7 +346,7 @@ spec:
         --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
         --components=$(params.COMPONENTS) \
         --case_download=true \
-        --from_oci=true
+        --from_oci=$(params.CASE_FROM_OCI)
     runAfter:
     - cpd-platform-apply-olm
     - set-db2-limited-privs

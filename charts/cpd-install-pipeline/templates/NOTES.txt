@@ -53,6 +53,8 @@ spec:
     values: "true"
   - name: DB2_LIMITED_PRIV
     values: "false"
+  - name: CASE_FROM_OCI
+    value: "true"
   - name: NO_GPU
     value: "false"
   - name: CP-INSTALL-OPTIONS
