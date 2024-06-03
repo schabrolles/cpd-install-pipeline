@@ -143,7 +143,7 @@ or use "oc create -f" with a PipelineRun yaml file. (example bellow)
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  generateName: cpd-install-pipeline-
+  generateName: cpd-install-
   namespace: cpd-install
 spec:
   params:
@@ -177,16 +177,20 @@ spec:
     value: "false"
   - name: ACCEPT_LICENCE
     value: "true"
-  - name: NO_GPU
-    value: "false"
   - name: APPLY_MACHINECONFIG
-    values: "true"
+    value: 'true'
   - name: DB2_LIMITED_PRIV
-    values: "false"
+    value: 'false'
+  - name: CASE_FROM_OCI
+    value: 'true'
+  - name: OCI_LOCATION
+    value: "icr.io/cpopen"
+  - name: NO_GPU
+    value: 'true'
   - name: CP-INSTALL-OPTIONS
-    value: cpd-install-pipeline-install-option
+    value: cpd-install-install-option
   pipelineRef:
-    name: cpd-install-pipeline
+    name: cpd-install
   taskRunTemplate:
     serviceAccountName: pipeline
   timeouts:

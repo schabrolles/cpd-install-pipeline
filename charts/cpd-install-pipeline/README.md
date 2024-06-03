@@ -1,7 +1,8 @@
 # cpd-install-pipeline
+
 Install automatically IBM Cloudpak for Data using Tekton Pipeline
 
-<img width="1702" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/136d0604-285a-4a58-9751-a8fb1746d4a8">
+<img width="1688" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/520b9618-d833-49c4-ae52-1cb6777ed819">
 
 ## Prerequisite:
 
@@ -18,7 +19,9 @@ Install automatically IBM Cloudpak for Data using Tekton Pipeline
    - GUI based: [Using openshift pipeline graphical interface](#2--Starting-pipeline-with-GUI)
    - cli based: [applying pipelineRun yaml file](2bis--Starting-pipeline-from-cli-(by-applying-YAML))
  
----
+## Installation
+* 1- [Using helm cli](#1--Configuring-cpd-install-Tekton-Pipeline-from-the-cli) (cli based)
+* 1bis- [Using openshift web-console](#1bis---Adding-helm-repo-to-openshift-to-use-Graphical-Interface) (GUI based)
 
 ### 1- Configuring cpd-install Tekton Pipeline from the cli
 
@@ -73,13 +76,19 @@ spec:
 - Select the Chart version you want.
 - **if you Run on Power or Z, set the arch value before validating**
 
+## Starting the pipeline
+* 2- [Using openshift pipeline graphical interface](#2--Starting-pipeline-with-GUI) (GUI based)
+* 2bis- [applying pipelineRun yaml file](2bis--Starting-pipeline-from-cli-(by-applying-YAML)) (cli based)
+
 ### 2- Starting pipeline with GUI
 
-If you plan to start the pipeline from the GUI (openshift-console), you must change the default pipeline timeout by using the following command:
-
-```other
-oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="300"
-```
+>#### Note:
+>* After having deploy the helm charts, verify that the `tekton-patch` pipeline ran successfuly.  
+>* This `tekton-patch` pipeline update the `openshift-pipelines` config to increase the default value from 1h to 5h (cp4d installation duration is 2h minimum).  
+>* If you want to update this parameter manually or if this pipeline failed you can change update this pipeline timeout parameter by using the following command:  
+>```other
+>oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="300"
+>```
 
 From the openshift console, enter in the project `cpd-install` and select the tab “pipeline" from the menu on the left.
 
@@ -134,7 +143,7 @@ or use "oc create -f" with a PipelineRun yaml file. (example bellow)
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  generateName: cpd-install-pipeline-
+  generateName: cpd-install-
   namespace: cpd-install
 spec:
   params:
@@ -168,16 +177,20 @@ spec:
     value: "false"
   - name: ACCEPT_LICENCE
     value: "true"
-  - name: NO_GPU
-    value: "false"
   - name: APPLY_MACHINECONFIG
-    values: "true"
+    value: 'true'
   - name: DB2_LIMITED_PRIV
-    values: "false"
+    value: 'false'
+  - name: CASE_FROM_OCI
+    value: 'true'
+  - name: OCI_LOCATION
+    value: "icr.io/cpopen"
+  - name: NO_GPU
+    value: 'true'
   - name: CP-INSTALL-OPTIONS
-    value: cpd-install-pipeline-install-option
+    value: cpd-install-install-option
   pipelineRef:
-    name: cpd-install-pipeline
+    name: cpd-install
   taskRunTemplate:
     serviceAccountName: pipeline
   timeouts:
@@ -198,5 +211,5 @@ spec:
 If you prefer you can download the `tkn` cli ([https://docs.openshift.com/container-platform/4.15/cli_reference/tkn_cli/installing-tkn.html#installing-tkn](https://docs.openshift.com/container-platform/4.15/cli_reference/tkn_cli/installing-tkn.html#installing-tkn))
 
 ```plaintext
-tkn pr logs -n cpd-install --follow
+tkn pr logs -n <pipeline_name> --follow
 ```
