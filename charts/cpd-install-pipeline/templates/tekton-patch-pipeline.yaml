@@ -8,20 +8,24 @@ spec:
   tasks:
     - name: default-timeout
       params:
-        - name: SCRIPT
+        - name: OLM_UTILS_IMAGE
+          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
           value: oc set data -n openshift-pipelines cm/config-defaults default-timeout-minutes="{{ .Values.tektonPatch.defaultTimeoutMinutes }}"
-        - name: VERSION
-          value: latest
       taskRef:
-        kind: ClusterTask
-        name: openshift-client
+        kind: Task
+        name: olm-utils
     - name: enable-enum
       params:
-        - name: SCRIPT
+        - name: OLM_UTILS_IMAGE
+          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
           value: oc patch cm feature-flags -n {{ .Values.tektonPatch.tektonNamespace }} -p '{"data":{"enable-param-enum":"{{ .Values.tektonPatch.activateEnum }}"}}'
-        - name: VERSION
-          value: latest
       taskRef:
-        kind: ClusterTask
-        name: openshift-client
+        kind: Task
+        name: olm-utils
 {{- end -}}

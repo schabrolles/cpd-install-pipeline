@@ -50,13 +50,15 @@ spec:
   - name: ACCEPT_LICENCE
     value: "true"
   - name: APPLY_MACHINECONFIG
-    values: "true"
+    value: 'true'
   - name: DB2_LIMITED_PRIV
-    values: "false"
+    value: 'false'
   - name: CASE_FROM_OCI
-    value: "true"
+    value: 'true'
+  - name: OCI_LOCATION
+    value: "icr.io/cpopen"
   - name: NO_GPU
-    value: "false"
+    value: 'true'
   - name: CP-INSTALL-OPTIONS
     value: {{ .Release.Name }}-install-option
   pipelineRef:
