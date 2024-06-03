@@ -20,6 +20,7 @@ Install automatically IBM Cloudpak for Data using Tekton Pipeline
    - cli based: [applying pipelineRun yaml file](2bis--Starting-pipeline-from-cli-(by-applying-YAML))
  
 ---
+## Installation
 
 ### 1- Configuring cpd-install Tekton Pipeline from the cli
 
@@ -73,6 +74,8 @@ spec:
 
 - Select the Chart version you want.
 - **if you Run on Power or Z, set the arch value before validating**
+
+## Starting the pipeline
 
 ### 2- Starting pipeline with GUI
 
