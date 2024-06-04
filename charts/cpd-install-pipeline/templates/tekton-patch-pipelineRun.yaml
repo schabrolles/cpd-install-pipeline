@@ -4,6 +4,8 @@ kind: PipelineRun
 metadata:
   name: tekton-patch
   namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install
 spec:
   pipelineRef:
     name: tekton-patch
