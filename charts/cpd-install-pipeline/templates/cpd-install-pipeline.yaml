@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: {{ .Release.Name }}
+  name: cpd-install
   namespace: {{ .Release.Namespace }}
 spec:
   params:
@@ -55,20 +55,20 @@ spec:
       enum: ["cpd-enterprise", "cpd-standard", "watsonx-ai", "watsonx-data", "watsonx-gov-model-management", "watsonx-gov-risk-compliance"]
       {{ end }}
     - default: "false"
-      description: Set true if you want to enable ibm-scheduler
+      description: Set [true] to enable ibm-scheduler
       name: SCHEDULER
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{ end }}
     - name: ACCEPT_LICENCE
-      description: 'Please Accept LICENCE (set true)'
+      description: 'Please Accept LICENCE (set [true])'
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{ end }} 
     - default: "true"
-      description: 'Set false for non-prod environment '
+      description: 'Set [false] for non-prod environment'
       name: PRODUCTION
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
@@ -89,18 +89,18 @@ spec:
       enum: ["true", "false"]
       {{ end }}
     - default: "true"
-      description: Set true to download CASE as OCI, false to get CASE from Github.
+      description: Set [true] to download CASE as OCI, [false] to get CASE from Github.
       name: CASE_FROM_OCI
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{ end }}
     - default: "cp.icr.io/cpopen"
-      description: if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages 
+      description: only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages 
       name: OCI_LOCATION
       type: "string"
     - default: "false"
-      description: (for watsonx.ai) Set true to preform the installation without GPU.
+      description: (for watsonx.ai) Set [true] to preform the installation without GPU.
       name: NO_GPU
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
@@ -146,7 +146,18 @@ spec:
           if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
             apply-db2-kubelet
           else
-            echo "No MachineConfig Found"
+            echo "No MachineConfig Found ..."
+            platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
+
+            case $platformSpec in 
+              IBMCloud)
+                echo "IBMCloud ROKS detected"
+                apply-db2-kubelet --openshift_type=roks 
+              ;;
+              *)
+                echo "Can't detect CloudProvider. Don't know how to apply configuration"
+              ;;
+            esac
           fi
     taskRef:
       kind: Task
