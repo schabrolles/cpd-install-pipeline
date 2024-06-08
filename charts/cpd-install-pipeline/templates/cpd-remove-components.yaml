@@ -1,0 +1,79 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: cpd-remove-components
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+    - default: icr.io/cpopen/cpd/olm-utils-v2
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: 4.8.5
+      description: cloud-pak for data version
+      name: VERSION
+      type: string
+    - default: 'wml,ws'
+      description: 'cloud-pak components to remove (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...)'
+      name: COMPONENTS
+      type: string
+    - default: cpd
+      description: cloud-pak operand namspace
+      name: PROJECT_CPD_INST_OPERANDS
+      type: string
+  tasks:
+    - name: get-license
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            get-license \
+            --release=$(params.VERSION) \
+            --license-type=EE
+      runAfter:
+        - components-delete-cr
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: components-delete-cr
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            delete-cr \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --components=$(params.COMPONENTS) \
+            --include_dependency=true
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 3h0m0s
+    - name: instance-details
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            get-cpd-instance-details \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --get_admin_initial_credentials=true
+      runAfter:
+        - components-delete-cr
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: get-cr-status
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            get-cr-status \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+      runAfter:
+        - components-delete-cr
+      taskRef:
+        kind: Task
+        name: olm-utils

@@ -1,0 +1,68 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: cpd-check
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+    - default: icr.io/cpopen/cpd/olm-utils-v2
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: 4.8.5
+      description: cloud-pak for data version
+      name: VERSION
+      type: string
+    - default: cpd
+      description: cloud-pak operand namspace
+      name: PROJECT_CPD_INST_OPERANDS
+      type: string
+  tasks:
+    - name: get-license
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            get-license \
+            --release=$(params.VERSION) \
+            --license-type=EE
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: instance-details
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            get-cpd-instance-details \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --get_admin_initial_credentials=true
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: get-cr-status
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            get-cr-status \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: list-deployed-components
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            list-deployed-components \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+        - name: CP-INSTALL-OPTIONS
+          value: cpd-install-install-option
+      taskRef:
+        kind: Task
+        name: olm-utils

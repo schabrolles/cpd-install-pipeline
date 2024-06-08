@@ -1,0 +1,287 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: cpd-add-components
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+    - default: icr.io/cpopen/cpd/olm-utils-v2
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: 4.8.5
+      description: cloud-pak for data version
+      name: VERSION
+      type: string
+    - default: 'wml,ws'
+      description: 'cloud-pak components to install (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...)'
+      name: COMPONENTS
+      type: string
+    - default: cpd
+      description: cloud-pak operand namspace
+      name: PROJECT_CPD_INST_OPERANDS
+      type: string
+    - default: cpd-operators
+      description: cloud-pak operators namspace
+      name: PROJECT_CPD_INST_OPERATORS
+      type: string
+    - default: ibm-scheduler
+      description: cloud-pak scheduler namespace
+      name: PROJECT_SCHEDULING_SERVICE
+      type: string
+    - name: IBM_ENTITLEMENT_KEY
+      type: string
+    - default: ocs-storagecluster-ceph-rbd
+      description: StorageClass for Block
+      name: STG_CLASS_BLOCK
+      type: string
+    - default: ocs-storagecluster-cephfs
+      description: StorageClass for Files
+      name: STG_CLASS_FILE
+      type: string
+    - default: 'false'
+      description: 'Set [true] to enable ibm-scheduler'
+      name: SCHEDULER
+      type: string
+    - description: 'Please Accept LICENCE (set [true])'
+      name: ACCEPT_LICENCE
+      type: string
+    - default: 'false'
+      description: Run DB2 pod in Limited Privilege mode
+      name: DB2_LIMITED_PRIV
+      type: string
+    - default: 'true'
+      description: 'Set [true] to download CASE as OCI, [false] to get CASE from Github.'
+      name: CASE_FROM_OCI
+      type: string
+    - default: cp.icr.io/cpopen
+      description: 'only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages'
+      name: OCI_LOCATION
+      type: string
+    - default: 'false'
+      description: '(for watsonx.ai) Set [true] to preform the installation without GPU.'
+      name: NO_GPU
+      type: string
+    - default: cpd-install-install-option
+      description: configMap which contains cloud pak install-options
+      name: CP-INSTALL-OPTIONS
+      type: string
+  tasks:
+    - name: kubelet-db2-limited-priv
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+              apply-db2-kubelet
+            else
+              echo "No MachineConfig Found ..."
+              platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
+
+              case $platformSpec in 
+                IBMCloud)
+                  echo "IBMCloud ROKS detected"
+                  apply-db2-kubelet --openshift_type=roks 
+                ;;
+                *)
+                  echo "Can't detect CloudProvider. Don't know how to apply configuration"
+                ;;
+              esac
+            fi
+      retries: 10
+      taskRef:
+        kind: Task
+        name: olm-utils
+      when:
+        - input: $(params.DB2_LIMITED_PRIV)
+          operator: in
+          values:
+            - 'true'
+            - 'yes'
+    - name: apply-scheduler
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            apply-scheduler \
+            --release=$(params.VERSION) \
+            --license_acceptance=$(params.ACCEPT_LICENCE) \
+            --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
+            --case_download=true \
+            --from_oci=$(params.CASE_FROM_OCI) \
+            --oci_location=$(params.OCI_LOCATION)
+      runAfter:
+        - kubelet-db2-limited-priv
+      taskRef:
+        kind: Task
+        name: olm-utils
+      when:
+        - input: $(params.SCHEDULER)
+          operator: in
+          values:
+            - 'true'
+            - 'yes'
+    - name: set-db2-limited-privs
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            oc apply -f - <<EOF
+            apiVersion: v1
+            data:
+              DB2U_RUN_WITH_LIMITED_PRIVS: "true"
+            kind: ConfigMap
+            metadata:
+              name: db2u-product-cm
+              namespace: $(params.PROJECT_CPD_INST_OPERATORS)
+            EOF
+      runAfter:
+        - apply-scheduler
+      taskRef:
+        kind: Task
+        name: olm-utils
+      when:
+        - input: $(params.DB2_LIMITED_PRIV)
+          operator: in
+          values:
+            - 'true'
+            - 'yes'
+    - name: component-apply-olm
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            apply-olm \
+            --release=$(params.VERSION) \
+            --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+            --components=$(params.COMPONENTS) \
+            --case_download=true \
+            --from_oci=$(params.CASE_FROM_OCI) \
+            --oci_location=$(params.OCI_LOCATION)
+      runAfter:
+        - apply-scheduler
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: get-license
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            get-license \
+            --release=$(params.VERSION) \
+            --license-type=EE
+      runAfter:
+        - components-apply-cr
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: components-apply-cr
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            apply-cr \
+            --release=$(params.VERSION) \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --components=$(params.COMPONENTS) \
+            --block_storage_class=$(params.STG_CLASS_BLOCK) \
+            --file_storage_class=$(params.STG_CLASS_FILE) \
+            --license_acceptance=$(params.ACCEPT_LICENCE) \
+            --param-file=/tmp/install-options/install-options.yml
+      runAfter:
+        - no-gpu-patch
+        - set-db2-limited-privs
+        - component-apply-olm
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 3h0m0s
+    - name: no-gpu-patch
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |+
+            TIME=90
+            while ! oc get -n $(params.PROJECT_CPD_INST_OPERANDS) watsonxai/watsonxai-cr > /dev/null 2>&1; do
+              [ $TIME -eq 0 ] && exit 2
+              echo "Wait from watsonxai-cr to be created. ($TIME)"
+              sleep 60
+              TIME=$((TIME - 1))
+            done
+
+            echo
+            echo "Patch watsonxai-cr to disable tunning-studio (bamdev)"
+            oc patch watsonxai watsonxai-cr \
+            --namespace=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --type='json' \
+            -p='[{"op": "add", "path": "/spec/tuning_disabled", "value": true}]'
+
+            echo
+            echo "restart watsonx-ai operator"
+            sleep 2
+            oc delete pod -n $(params.PROJECT_CPD_INST_OPERATORS) -l app.kubernetes.io/name=ibm-cpd-watsonx-ai-operator --ignore-not-found
+
+      runAfter:
+        - apply-scheduler
+      taskRef:
+        kind: Task
+        name: olm-utils
+      when:
+        - input: $(params.NO_GPU)
+          operator: in
+          values:
+            - 'true'
+            - 'yes'
+    - name: instance-details
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            get-cpd-instance-details \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --get_admin_initial_credentials=true
+      runAfter:
+        - components-apply-cr
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: get-cr-status
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            get-cr-status \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+      runAfter:
+        - components-apply-cr
+      taskRef:
+        kind: Task
+        name: olm-utils
