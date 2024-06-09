@@ -75,7 +75,7 @@ spec:
           value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}'
         - name: OLM_CMD
           value: |-
-            IBM_LICENSING=$(params.PROJECT_LICENSE_SERVICE)
+            IBM_LICENSING=$(echo $(params.PROJECT_LICENSE_SERVICE) | tr -d '[:space:]')
             oc get project ${IBM_LICENSING} > /dev/null 2>&1
             if [ $? -eq 0 ];then
                 echo "Deleting everything in the ${IBM_LICENSING} project"
@@ -112,7 +112,7 @@ spec:
           value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}'
         - name: OLM_CMD
           value: |-
-            IBM_CERT_MANAGER=$(params.PROJECT_CERT_MANAGER)
+            IBM_CERT_MANAGER=$( echo $(params.PROJECT_CERT_MANAGER) | tr -d '[:space:]')
             oc get project ${IBM_CERT_MANAGER} > /dev/null 2>&1
             if [ $? -eq 0 ];then
                 echo "Deleting everything in the ${IBM_CERT_MANAGER} project"

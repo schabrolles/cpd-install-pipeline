@@ -377,10 +377,12 @@ spec:
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
+        COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
+
         apply-olm \
         --release=$(params.VERSION) \
         --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
-        --components=$(params.COMPONENTS) \
+        --components=$COMPONENTS \
         --case_download=true \
         --from_oci=$(params.CASE_FROM_OCI) \
         --oci_location=$(params.OCI_LOCATION)
