@@ -416,10 +416,12 @@ spec:
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
+        COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
+
         apply-cr \
         --release=$(params.VERSION) \
         --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
-        --components=$(params.COMPONENTS) \
+        --components=$COMPONENTS \
         --block_storage_class=$(params.STG_CLASS_BLOCK) \
         --file_storage_class=$(params.STG_CLASS_FILE) \
         --license_acceptance=$(params.ACCEPT_LICENCE) \
