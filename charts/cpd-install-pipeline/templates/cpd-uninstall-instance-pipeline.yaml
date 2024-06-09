@@ -9,7 +9,7 @@ spec:
       description: olm-utils images
       name: OLM_UTILS_IMAGE
       type: string
-    - default: 4.8.5
+    - default: {{ .Values.cpd_version }}
       description: cloud-pak for data version
       name: VERSION
       type: string
@@ -78,16 +78,17 @@ spec:
             IBM_LICENSING=$(params.PROJECT_LICENSE_SERVICE)
             oc get project ${IBM_LICENSING} > /dev/null 2>&1
             if [ $? -eq 0 ];then
-                log "Deleting everything in the ${IBM_LICENSING} project"
+                echo "Deleting everything in the ${IBM_LICENSING} project"
                 oc delete ibmlicensing  --all --ignore-not-found
                 oc delete sub -n ${IBM_LICENSING} --all --ignore-not-found
                 oc delete csv -n ${IBM_LICENSING} --all --ignore-not-found
 
-                log "Deleting ${IBM_LICENSING} project"
+                echo "Deleting ${IBM_LICENSING} project"
                 oc delete ns ${IBM_LICENSING} --ignore-not-found --wait=false
-                wait_ns_deleted ${IBM_LICENSING}
-                oc delete ns ${IBM_LICENSING} --ignore-not-found --wait=false
-                wait_ns_deleted ${IBM_LICENSING}
+                while $(oc get ns ${NS} > /dev/null 2>&1);do
+                    echo "wait for NS ${IBM_LICENSING} deletion"
+                    sleep 5
+                done
             else
                 echo "Project ${IBM_LICENSING} does not exist, skipping"
             fi
@@ -114,7 +115,7 @@ spec:
             IBM_CERT_MANAGER=$(params.PROJECT_CERT_MANAGER)
             oc get project ${IBM_CERT_MANAGER} > /dev/null 2>&1
             if [ $? -eq 0 ];then
-                log "Deleting everything in the ${IBM_CERT_MANAGER} project"
+                echo "Deleting everything in the ${IBM_CERT_MANAGER} project"
                 oc delete lease -n ${IBM_CERT_MANAGER} --all --ignore-not-found
                 oc delete endpointslice -n ${IBM_CERT_MANAGER}  --all --ignore-not-found
                 oc delete endpoints -n ${IBM_CERT_MANAGER}  --all --ignore-not-found
@@ -122,11 +123,12 @@ spec:
                 oc delete sub -n ${IBM_CERT_MANAGER} --all --ignore-not-found
                 oc delete csv -n ${IBM_CERT_MANAGER} --all --ignore-not-found
 
-                log "Deleting ${IBM_CERT_MANAGER} project"
+                echo "Deleting ${IBM_CERT_MANAGER} project"
                 oc delete ns ${IBM_CERT_MANAGER} --ignore-not-found --wait=false
-                wait_ns_deleted ${IBM_CERT_MANAGER}
-                oc delete ns ${IBM_CERT_MANAGER} --ignore-not-found --wait=false
-                wait_ns_deleted ${IBM_CERT_MANAGER}
+                while $(oc get ns ${NS} > /dev/null 2>&1);do
+                    echo "wait for NS ${IBM_CERT_MANAGER} deletion"
+                    sleep 5
+                done
             else
                 echo "Project ${IBM_CERT_MANAGER} does not exist, skipping"
             fi

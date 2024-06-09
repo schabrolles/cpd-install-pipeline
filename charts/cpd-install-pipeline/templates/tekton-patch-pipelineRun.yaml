@@ -13,5 +13,5 @@ spec:
     - name: OLM_UTILS_IMAGE
       value: icr.io/cpopen/cpd/olm-utils-v2
     - name: VERSION
-      value: 4.8.5
+      value: {{ .Values.cpd_version }}
 {{- end -}}

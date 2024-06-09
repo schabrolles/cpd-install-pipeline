@@ -9,7 +9,7 @@ spec:
       description: olm-utils images
       name: OLM_UTILS_IMAGE
       type: string
-    - default: 4.8.5
+    - default: {{ .Values.cpd_version }}
       description: cloud-pak for data version
       name: VERSION
       type: string
