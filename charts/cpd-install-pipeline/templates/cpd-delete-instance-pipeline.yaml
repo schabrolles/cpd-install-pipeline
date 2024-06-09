@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: cpd-uninstall-instance
+  name: cpd-delete-instance
   namespace: {{ .Release.Namespace }}
 spec:
   params:
