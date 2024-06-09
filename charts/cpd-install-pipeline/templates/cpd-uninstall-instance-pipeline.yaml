@@ -85,7 +85,7 @@ spec:
 
                 echo "Deleting ${IBM_LICENSING} project"
                 oc delete ns ${IBM_LICENSING} --ignore-not-found --wait=false
-                while $(oc get ns ${NS} > /dev/null 2>&1);do
+                while $(oc get ns ${IBM_LICENSING} > /dev/null 2>&1);do
                     echo "wait for NS ${IBM_LICENSING} deletion"
                     sleep 5
                 done
@@ -125,7 +125,7 @@ spec:
 
                 echo "Deleting ${IBM_CERT_MANAGER} project"
                 oc delete ns ${IBM_CERT_MANAGER} --ignore-not-found --wait=false
-                while $(oc get ns ${NS} > /dev/null 2>&1);do
+                while $(oc get ns ${IBM_CERT_MANAGER} > /dev/null 2>&1);do
                     echo "wait for NS ${IBM_CERT_MANAGER} deletion"
                     sleep 5
                 done
