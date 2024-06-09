@@ -10,7 +10,7 @@
       "enum": ["4.8.5", "4.8.4", "4.8.3"],
       "description": "cpd version to set as default in your pipelines"
     },
-    "default_cpd_entitlement": {
+    "default_cpd_install": {
       "enum": ["cpd", "watsonx"],
       "description": "adapt pipeline default parameters for cpd or watsonx"
     },
