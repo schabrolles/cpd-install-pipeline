@@ -13,7 +13,11 @@ spec:
       description: cloud-pak for data version
       name: VERSION
       type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: watsonx
+    {{ else }}
     - default: cpd
+    {{ end }}
       description: cloud-pak operand namspace
       name: PROJECT_CPD_INST_OPERANDS
       type: string

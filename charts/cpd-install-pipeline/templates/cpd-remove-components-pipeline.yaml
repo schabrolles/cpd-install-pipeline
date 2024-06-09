@@ -16,7 +16,11 @@ spec:
     - description: 'cloud-pak components to remove (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...)'
       name: COMPONENTS
       type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: watsonx
+    {{ else }}
     - default: cpd
+    {{ end }}
       description: cloud-pak operand namspace
       name: PROJECT_CPD_INST_OPERANDS
       type: string
