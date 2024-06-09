@@ -54,8 +54,17 @@ spec:
     - name: delete-olm-artifacts
       params:
         - name: OLM_UTILS_IMAGE
-          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
         - name: OLM_CM
+          value: |-
+            oc project $(params.PROJECT_CPD_INST_OPERATORS)
+
+            delete-olm-artifacts \
+            --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --delete_all_components=true
+        - name: CP-INSTALL-OPTIONS
+          value: cpd-install-install-option
+        - name: OLM_CMD
           value: |-
             oc project $(params.PROJECT_CPD_INST_OPERATORS)
 
@@ -93,8 +102,6 @@ spec:
             --ignore-not-found=true
             oc delete crd mcschedulings.scheduler.spectrumcomputing.ibm.com \
             --ignore-not-found=true
-        - name: CP-INSTALL-OPTIONS
-          value: cpd-install-install-option
       runAfter:
         - components-delete-cr
       taskRef:
