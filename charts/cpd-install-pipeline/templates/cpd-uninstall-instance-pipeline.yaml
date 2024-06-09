@@ -1,0 +1,146 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: cpd-uninstall-instance
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+    - default: icr.io/cpopen/cpd/olm-utils-v2
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: 4.8.5
+      description: cloud-pak for data version
+      name: VERSION
+      type: string
+    - description: cloud-pak operand namspace
+      name: PROJECT_CPD_INST_OPERANDS
+      type: string
+    - description: cloud-pak operators namspace
+      name: PROJECT_CPD_INST_OPERATORS
+      type: string
+    - default: 'false'
+      description: cloud-pak ibm-cert-manager namespace ([false] means do-not-uninstall)
+      name: PROJECT_CERT_MANAGER
+      type: string
+    - default: 'false'
+      description: cloud-pak ibm-licensing namespace ([false] means do-not-uninstall)
+      name: PROJECT_LICENSE_SERVICE
+      type: string
+  tasks:
+    - name: components-delete-cr
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            oc project $(params.PROJECT_CPD_INST_OPERANDS)
+
+            COMPONENTS=$(list-deployed-components \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            | grep -A1 "components list is:" | tail -n1 | tr -d '[:space:]')
+
+            echo
+            echo "Removing COMPONENTS=$COMPONENTS"
+
+            delete-cr \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --components=$COMPONENTS \
+            --include_dependency=true
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 3h0m0s
+    - name: delete-olm-artifacts
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            oc project $(params.PROJECT_CPD_INST_OPERATORS)
+
+            delete-olm-artifacts \
+            --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --delete_all_components=true
+        - name: CP-INSTALL-OPTIONS
+          value: cpd-install-install-option
+      runAfter:
+        - components-delete-cr
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: remove-ibm-licensing
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            IBM_LICENSING=$(params.PROJECT_LICENSE_SERVICE)
+            oc get project ${IBM_LICENSING} > /dev/null 2>&1
+            if [ $? -eq 0 ];then
+                log "Deleting everything in the ${IBM_LICENSING} project"
+                oc delete ibmlicensing  --all --ignore-not-found
+                oc delete sub -n ${IBM_LICENSING} --all --ignore-not-found
+                oc delete csv -n ${IBM_LICENSING} --all --ignore-not-found
+
+                log "Deleting ${IBM_LICENSING} project"
+                oc delete ns ${IBM_LICENSING} --ignore-not-found --wait=false
+                wait_ns_deleted ${IBM_LICENSING}
+                oc delete ns ${IBM_LICENSING} --ignore-not-found --wait=false
+                wait_ns_deleted ${IBM_LICENSING}
+            else
+                echo "Project ${IBM_LICENSING} does not exist, skipping"
+            fi
+        - name: CP-INSTALL-OPTIONS
+          value: cpd-install-install-option
+      runAfter:
+        - delete-olm-artifacts
+      taskRef:
+        kind: Task
+        name: olm-utils
+      when:
+        - input: $(params.PROJECT_LICENSE_SERVICE)
+          operator: notin
+          values:
+            - 'false'
+            - 'False'
+            - 'No'
+    - name: remove-ibm-cert-manager
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            IBM_CERT_MANAGER=$(params.PROJECT_CERT_MANAGER)
+            oc get project ${IBM_CERT_MANAGER} > /dev/null 2>&1
+            if [ $? -eq 0 ];then
+                log "Deleting everything in the ${IBM_CERT_MANAGER} project"
+                oc delete lease -n ${IBM_CERT_MANAGER} --all --ignore-not-found
+                oc delete endpointslice -n ${IBM_CERT_MANAGER}  --all --ignore-not-found
+                oc delete endpoints -n ${IBM_CERT_MANAGER}  --all --ignore-not-found
+
+                oc delete sub -n ${IBM_CERT_MANAGER} --all --ignore-not-found
+                oc delete csv -n ${IBM_CERT_MANAGER} --all --ignore-not-found
+
+                log "Deleting ${IBM_CERT_MANAGER} project"
+                oc delete ns ${IBM_CERT_MANAGER} --ignore-not-found --wait=false
+                wait_ns_deleted ${IBM_CERT_MANAGER}
+                oc delete ns ${IBM_CERT_MANAGER} --ignore-not-found --wait=false
+                wait_ns_deleted ${IBM_CERT_MANAGER}
+            else
+                echo "Project ${IBM_CERT_MANAGER} does not exist, skipping"
+            fi
+        - name: CP-INSTALL-OPTIONS
+          value: cpd-install-install-option
+      runAfter:
+        - delete-olm-artifacts
+      taskRef:
+        kind: Task
+        name: olm-utils
+      when:
+        - input: $(params.OLM_UTILS_IMAGE)
+          operator: notin
+          values:
+            - 'false'
+            - 'False'
+            - 'No'
