@@ -5,6 +5,12 @@
 # specify ppc64le or s390x, empty is x86 (default)
 arch: "x86"
 
+# Cloudpak for Data / OLM version to set as default in pipelines
+cpd_version: "4.8.5"
+
+# Cloud pak for Data mode to set as default in pipelines: cpd-enterprise, watsonx
+default_mode: "cpd"
+
 tektonPatch:
   enabled: true
   defaultTimeoutMinutes: 300
