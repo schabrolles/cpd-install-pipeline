@@ -70,3 +70,16 @@ spec:
       taskRef:
         kind: Task
         name: olm-utils
+    - name: get-scale-config
+      params: 
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}'
+        - name: OLM_CMD
+          value: |-
+            get-scale-config \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+        - name: CP-INSTALL-OPTIONS
+          value: cpd-install-install-option
+      taskRef:
+        kind: Task
+        name: olm-utils
