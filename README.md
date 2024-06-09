@@ -13,8 +13,9 @@ Install automatically IBM Cloudpak for Data using Tekton Pipeline
 ## Table of Content:
 
 - **Installation**
-   - cli based: [Using helm cli](#1--Configuring-cpd-install-Tekton-Pipeline-from-the-cli)
-   - GUI based: [Using openshift web-console](#1bis---Adding-helm-repo-to-openshift-to-use-Graphical-Interface)
+   - GUI based: [Using openshift web-console](#1--Adding-helm-repo-to-openshift-to-use-Graphical-Interface)
+   - cli based: [Using helm cli](#1bis--Configuring-cpd-install-Tekton-Pipeline-from-the-cli)
+
 - **Starting Pipeline**
    - GUI based: [Using openshift pipeline graphical interface](#2--Starting-pipeline-with-GUI)
    - cli based: [applying pipelineRun yaml file](2bis--Starting-pipeline-from-cli-(by-applying-YAML))
@@ -23,7 +24,33 @@ Install automatically IBM Cloudpak for Data using Tekton Pipeline
 * 1- [Using helm cli](#1--Configuring-cpd-install-Tekton-Pipeline-from-the-cli) (cli based)
 * 1bis- [Using openshift web-console](#1bis---Adding-helm-repo-to-openshift-to-use-Graphical-Interface) (GUI based)
 
-### 1- Configuring cpd-install Tekton Pipeline from the cli
+### 1- Adding helm repo to openshift to use Graphical Interface
+
+apply the following yaml to add the helm repo in openshift.
+```
+apiVersion: helm.openshift.io/v1beta1
+kind: HelmChartRepository
+metadata:
+  name: cpd-install-pipeline
+spec:
+  connectionConfig:
+    url: 'https://schabrolles.github.io/cpd-install-pipeline'
+```
+
+- Then create a project: `cp-install`for example.
+- Switch to **developer view** / **add**
+- Select Helm charts and search for cp-install
+
+<img width="1856" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/b15b43fd-3d01-405e-a602-b61a87bab204">
+
+- Click on **Create**
+
+<img width="1491" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/0cc8c07d-0602-473e-81a6-75d8f7144e56">
+
+- Select the Chart version you want.
+- **if you Run on Power or Z, set the arch value before validating**
+
+### 1bis- Configuring cpd-install Tekton Pipeline from the cli
 
 After having installed the openshift-pipeline operator, use helm to deploy the tasks and pipeline in a namespace of your cluster.
 
@@ -49,32 +76,6 @@ This will:
    - give the **::“cluster-admin”::** right to the “**pipeline**” service-account of this project
    - create a tekton task “**olm-utils**” based on the official `olm-utils-v2` from IBM (icr.io)
    - create a tekton pipeline to install automatically the cloud pak for data `components` you choose
-
-### 1bis - Adding helm repo to openshift to use Graphical Interface
-
-apply the following yaml to add the helm repo in openshift.
-```
-apiVersion: helm.openshift.io/v1beta1
-kind: HelmChartRepository
-metadata:
-  name: cpd-install-pipeline
-spec:
-  connectionConfig:
-    url: 'https://schabrolles.github.io/cpd-install-pipeline'
-```
-
-- Then create a project: `cp-install`for example.
-- Switch to **developer view** / **add**
-- Select Helm charts and search for cp-install
-
-<img width="1856" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/b15b43fd-3d01-405e-a602-b61a87bab204">
-
-- Click on **Create**
-
-<img width="1491" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/0cc8c07d-0602-473e-81a6-75d8f7144e56">
-
-- Select the Chart version you want.
-- **if you Run on Power or Z, set the arch value before validating**
 
 ## Starting the pipeline
 * 2- [Using openshift pipeline graphical interface](#2--Starting-pipeline-with-GUI) (GUI based)
