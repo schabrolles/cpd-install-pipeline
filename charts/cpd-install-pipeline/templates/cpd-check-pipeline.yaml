@@ -25,7 +25,7 @@ spec:
     - name: get-license
       params:
         - name: OLM_UTILS_IMAGE
-          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}'
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
         - name: OLM_CMD
           value: |-
             get-license \
@@ -37,7 +37,7 @@ spec:
     - name: instance-details
       params:
         - name: OLM_UTILS_IMAGE
-          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}'
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
         - name: OLM_CMD
           value: |-
             get-cpd-instance-details \
@@ -49,7 +49,7 @@ spec:
     - name: get-cr-status
       params:
         - name: OLM_UTILS_IMAGE
-          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}'
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
         - name: OLM_CMD
           value: |-
             get-cr-status \
@@ -60,7 +60,7 @@ spec:
     - name: list-deployed-components
       params:
         - name: OLM_UTILS_IMAGE
-          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}'
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
         - name: OLM_CMD
           value: |-
             list-deployed-components \
