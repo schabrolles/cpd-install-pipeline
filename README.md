@@ -21,8 +21,8 @@ Install automatically IBM Cloudpak for Data using Tekton Pipeline
    - cli based: [applying pipelineRun yaml file](2bis--Starting-pipeline-from-cli-(by-applying-YAML))
  
 ## Installation
-* 1- [Using helm cli](#1--Configuring-cpd-install-Tekton-Pipeline-from-the-cli) (cli based)
-* 1bis- [Using openshift web-console](#1bis---Adding-helm-repo-to-openshift-to-use-Graphical-Interface) (GUI based)
+The easiest way to install the pipeline is to add this helm registry to your openshift cluster.  
+**You must have acces to internet for this** For airgap mod, please use the helm cli and download the archive from [release page](https://github.com/schabrolles/cpd-install-pipeline/releases)
 
 ### 1- Adding helm repo to openshift to use Graphical Interface
 
@@ -204,6 +204,7 @@ spec:
 
   - You need to provide at least your **IBM Entitlement key** ([link to get your key](https://myibm.ibm.com/products-services/containerlibrary))
   - You can change the version, name of namespaces or storageclass to use
+  - [list of available component](https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=information-determining-which-components-install#collect-info-components__all-svcs)
   - If you are not running a production service, set **production** to **false**
   - if you don’t have GPUs but still want to deploy watsonx, set **NO_GPU** to **true**
 
