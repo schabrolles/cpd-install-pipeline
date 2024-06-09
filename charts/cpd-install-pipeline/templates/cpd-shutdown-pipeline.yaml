@@ -1,0 +1,46 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: cpd-shutdown
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+    - default: icr.io/cpopen/cpd/olm-utils-v2
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: {{ .Values.cpd_version }}
+      description: cloud-pak for data version
+      name: VERSION
+      type: string
+    - description: cloud-pak operand namspace
+      name: PROJECT_CPD_INST_OPERANDS
+      type: string
+    - default: all
+      description: 'cloud-pak components to shutdown (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...)'
+      name: COMPONENTS
+      type: string
+    - default: 'false'
+      description: force shutdown
+      name: FORCE
+      type: string
+  tasks:
+    - name: shutdown-components
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
+
+            if [ "$COMPONENTS" == "all" ] ; then
+              COMPONENTS=$(list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) | grep -A1 "components list is:" | tail -n1 | tr -d '[:space:]')
+            fi
+
+            shutdown --components=$COMPONENTS --include_dependency=true --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) --force=$(params.FORCE)
+        - name: CP-INSTALL-OPTIONS
+          value: cpd-install-install-option
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 3h0m0s
