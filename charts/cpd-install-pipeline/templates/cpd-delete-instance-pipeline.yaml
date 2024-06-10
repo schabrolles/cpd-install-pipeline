@@ -54,7 +54,7 @@ spec:
     - name: delete-olm-artifacts
       params:
         - name: OLM_UTILS_IMAGE
-          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
         - name: OLM_CM
           value: |-
             oc project $(params.PROJECT_CPD_INST_OPERATORS)
