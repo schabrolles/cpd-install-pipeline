@@ -37,7 +37,7 @@ spec:
 
             restart --components=$COMPONENTS --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) 
         - name: CP-INSTALL-OPTIONS
-          value: cpd-install-install-option
+          value: "{{ .Release.Name }}-install-option"
       taskRef:
         kind: Task
         name: olm-utils

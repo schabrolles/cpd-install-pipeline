@@ -63,7 +63,7 @@ spec:
             --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
             --delete_all_components=true
         - name: CP-INSTALL-OPTIONS
-          value: cpd-install-install-option
+          value: "{{ .Release.Name }}-install-option"
         - name: OLM_CMD
           value: |-
             oc project $(params.PROJECT_CPD_INST_OPERATORS)
@@ -131,7 +131,7 @@ spec:
                 echo "Project ${IBM_LICENSING} does not exist, skipping"
             fi
         - name: CP-INSTALL-OPTIONS
-          value: cpd-install-install-option
+          value: "{{ .Release.Name }}-install-option"
       runAfter:
         - delete-olm-artifacts
       taskRef:
@@ -171,7 +171,7 @@ spec:
                 echo "Project ${IBM_CERT_MANAGER} does not exist, skipping"
             fi
         - name: CP-INSTALL-OPTIONS
-          value: cpd-install-install-option
+          value: "{{ .Release.Name }}-install-option"
       runAfter:
         - delete-olm-artifacts
       taskRef:

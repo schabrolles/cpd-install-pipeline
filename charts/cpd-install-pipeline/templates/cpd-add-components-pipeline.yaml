@@ -69,7 +69,7 @@ spec:
       description: '(for watsonx.ai) Set [true] to preform the installation without GPU.'
       name: NO_GPU
       type: string
-    - default: cpd-install-install-option
+    - default: "{{ .Release.Name }}-install-option"
       description: configMap which contains cloud pak install-options
       name: CP-INSTALL-OPTIONS
       type: string
