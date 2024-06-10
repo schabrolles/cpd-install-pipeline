@@ -178,7 +178,7 @@ spec:
         kind: Task
         name: olm-utils
       when:
-        - input: $(params.OLM_UTILS_IMAGE)
+        - input: $(params.PROJECT_CERT_MANAGER)
           operator: notin
           values:
             - 'false'
