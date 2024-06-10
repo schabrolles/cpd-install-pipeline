@@ -257,7 +257,7 @@ spec:
         name: olm-utils
       when:
         - input: $(params.NO_GPU)
-          operator: in
+          operator: notin
           values:
             - 'true'
             - 'yes'
