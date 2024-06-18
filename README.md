@@ -27,7 +27,7 @@ For airgap mod, please use the helm cli and download the archive from [release p
 
 ### 1- Adding helm repo to openshift to use Graphical Interface
 
-apply the following yaml to add the helm repo in openshift (with `oc apply` or on the openshift console by clicking on the "**+**" button on the black banner in the top right of the screen. 
+apply the following yaml to add the helm repo in openshift (with `oc apply` or on the openshift console by clicking on the "**+**" button on the black banner at the top right-end corner of the screen. 
 ```
 apiVersion: helm.openshift.io/v1beta1
 kind: HelmChartRepository
