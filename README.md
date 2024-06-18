@@ -22,11 +22,12 @@ Install automatically IBM Cloudpak for Data using Tekton Pipeline
  
 ## Installation
 The easiest way to install the pipeline is to add this helm registry to your openshift cluster.  
-**You must have acces to internet for this** For airgap mod, please use the helm cli and download the archive from [release page](https://github.com/schabrolles/cpd-install-pipeline/releases)
+**You must have acces to internet for this.**  
+For airgap mod, please use the helm cli and download the archive from [release page](https://github.com/schabrolles/cpd-install-pipeline/releases)
 
 ### 1- Adding helm repo to openshift to use Graphical Interface
 
-apply the following yaml to add the helm repo in openshift.
+apply the following yaml to add the helm repo in openshift (with `oc apply` or on the openshift console by clicking on the "**+**" button on the black banner in the top right of the screen. 
 ```
 apiVersion: helm.openshift.io/v1beta1
 kind: HelmChartRepository
