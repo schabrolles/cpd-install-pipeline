@@ -212,11 +212,11 @@ spec:
           echo
           echo "non-MCP cluster detected, activating workaround"
           case $platformSpec in 
-            KubeVirt)
+            KubeVirt )
               echo "KubeVirt detected, nothing to do"
               echo
             ;;
-            IBMCloud)
+            IBMCloud )
               echo "ROKS detected, activating workaround"
               echo
               oc debug $(oc get node -o name | head -n1) -- chroot /host cat /.docker/config.json > /tmp/config.json

@@ -90,7 +90,7 @@ spec:
             platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
 
             case $platformSpec in 
-              IBMCloud)
+              IBMCloud )
                 echo "\nIBMCloud ROKS detected"
                 apply-db2-kubelet --openshift_type=roks
 
@@ -106,7 +106,7 @@ spec:
                 echo "* Restarting kubelet"
                 oc adm restart-kubelet nodes --all --directive=RemoveKubeletKubeconfig
               ;;
-              *)
+              * )
                 echo "Can't detect CloudProvider. Don't know how to apply configuration"
               ;;
             esac
@@ -118,8 +118,8 @@ spec:
       - input: $(params.DB2_LIMITED_PRIV)
         operator: in
         values:
-        - "true"
-        - "yes"
+        - 'true'
+        - 'yes'
     - name: apply-scheduler
       params:
         - name: OLM_UTILS_IMAGE
