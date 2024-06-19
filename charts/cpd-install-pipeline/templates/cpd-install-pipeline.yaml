@@ -167,8 +167,20 @@ spec:
 
             case $platformSpec in 
               IBMCloud)
-                echo "IBMCloud ROKS detected"
-                apply-db2-kubelet --openshift_type=roks 
+                echo "\nIBMCloud ROKS detected"
+                apply-db2-kubelet --openshift_type=roks
+
+                echo "* [Applying kubelet config without reboot]"
+                echo "* Fetching cp4d-kubelet.conf"
+                oc extract cm/cp4d-kubelet-conf -n kube-system --to=/tmp
+
+                echo "* Deploying new kebelet"
+                for n in `oc get node -o name`; do 
+                  oc adm copy-to-node --copy=/tmp/cp4d-kubelet.conf=/etc/kubernetes/kubelet.conf $n
+                done
+
+                echo "* Restarting kubelet"
+                oc adm restart-kubelet nodes --all --directive=RemoveKubeletKubeconfig
               ;;
               *)
                 echo "Can't detect CloudProvider. Don't know how to apply configuration"
@@ -196,16 +208,26 @@ spec:
         --entitled_registry_key=$(params.IBM_ENTITLEMENT_KEY)
 
         if [[ $(oc get mcp -o name | wc -l) -eq 0 ]]; then
+          platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
           echo
           echo "non-MCP cluster detected, activating workaround"
-          oc debug $(oc get node -o name | head -n1) -- chroot /host cat /.docker/config.json > /tmp/config.json
+          case $platformSpec in 
+            KubeVirt)
+              echo "KubeVirt detected, nothing to do"
+              echo
+            ;;
+            IBMCloud)
+              echo "ROKS detected, activating workaround"
+              echo
+              oc debug $(oc get node -o name | head -n1) -- chroot /host cat /.docker/config.json > /tmp/config.json
 
-          cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
-          sleep 1
+              cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
+              sleep 1
 
-          for n in `oc get node -o name`; do 
-            oc adm copy-to-node --copy=/tmp/config.json.new=/.docker/config.json $n
-          done
+              for n in `oc get node -o name`; do 
+                oc adm copy-to-node --copy=/tmp/config.json.new=/.docker/config.json $n
+              done
+            ;;
         fi
     taskRef:
       kind: Task

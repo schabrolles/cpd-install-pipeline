@@ -74,40 +74,52 @@ spec:
       name: CP-INSTALL-OPTIONS
       type: string
   tasks:
-    - name: kubelet-db2-limited-priv
-      params:
-        - name: OLM_UTILS_IMAGE
-          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}'
-        - name: CP-INSTALL-OPTIONS
-          value: $(params.CP-INSTALL-OPTIONS)
-        - name: OLM_CMD
-          value: |-
-            if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-              apply-db2-kubelet
-            else
-              echo "No MachineConfig Found ..."
-              platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
+  - name: kubelet-db2-limited-priv
+    retries: 10
+    params:
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_CMD
+        value: |-
+          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+            apply-db2-kubelet
+          else
+            echo "No MachineConfig Found ..."
+            platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
 
-              case $platformSpec in 
-                IBMCloud)
-                  echo "IBMCloud ROKS detected"
-                  apply-db2-kubelet --openshift_type=roks 
-                ;;
-                *)
-                  echo "Can't detect CloudProvider. Don't know how to apply configuration"
-                ;;
-              esac
-            fi
-      retries: 10
-      taskRef:
-        kind: Task
-        name: olm-utils
-      when:
-        - input: $(params.DB2_LIMITED_PRIV)
-          operator: in
-          values:
-            - 'true'
-            - 'yes'
+            case $platformSpec in 
+              IBMCloud)
+                echo "\nIBMCloud ROKS detected"
+                apply-db2-kubelet --openshift_type=roks
+
+                echo "* [Applying kubelet config without reboot]"
+                echo "* Fetching cp4d-kubelet.conf"
+                oc extract cm/cp4d-kubelet-conf -n kube-system --to=/tmp
+
+                echo "* Deploying new kebelet"
+                for n in `oc get node -o name`; do 
+                  oc adm copy-to-node --copy=/tmp/cp4d-kubelet.conf=/etc/kubernetes/kubelet.conf $n
+                done
+
+                echo "* Restarting kubelet"
+                oc adm restart-kubelet nodes --all --directive=RemoveKubeletKubeconfig
+              ;;
+              *)
+                echo "Can't detect CloudProvider. Don't know how to apply configuration"
+              ;;
+            esac
+          fi
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+      - input: $(params.DB2_LIMITED_PRIV)
+        operator: in
+        values:
+        - "true"
+        - "yes"
     - name: apply-scheduler
       params:
         - name: OLM_UTILS_IMAGE
