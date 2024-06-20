@@ -152,7 +152,7 @@ spec:
   - name: OLM_UTILS_IMAGE
     value: icr.io/cpopen/cpd/olm-utils-v3
   - name: VERSION
-    value: 4.8.5
+    value: 5.0.0
   - name: COMPONENTS
     value: wml,ws
   - name: PROJECT_CPD_INST_OPERANDS
