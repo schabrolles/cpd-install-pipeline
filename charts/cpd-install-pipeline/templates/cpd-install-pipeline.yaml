@@ -215,19 +215,22 @@ spec:
             KubeVirt )
               echo "KubeVirt detected, nothing to do"
               echo
+              dockerconfigfile=/var/lib/kubelet/config.json
             ;;
             IBMCloud )
               echo "ROKS detected, activating workaround"
               echo
-              oc debug $(oc get node -o name | head -n1) -- chroot /host cat /.docker/config.json > /tmp/config.json
-
-              cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
-              sleep 1
-
-              for n in `oc get node -o name`; do 
-                oc adm copy-to-node --copy=/tmp/config.json.new=/.docker/config.json $n
-              done
+              dockerconfigfile=/.docker//config.json
             ;;
+          esac
+            oc debug $(oc get node -o name | head -n1) -- chroot /host cat $dockerconfigfile > /tmp/config.json
+
+            cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
+            sleep 1
+
+            for n in `oc get node -o name`; do 
+              oc adm copy-to-node --copy=/tmp/config.json.new=$dockerconfigfile $n
+            done
         fi
     taskRef:
       kind: Task
