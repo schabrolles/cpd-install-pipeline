@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   params:
-    - default: icr.io/cpopen/cpd/olm-utils-v2
+    - default: icr.io/cpopen/cpd/olm-utils-v3
       description: olm-utils images
       name: OLM_UTILS_IMAGE
       type: string

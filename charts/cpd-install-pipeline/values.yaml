@@ -6,7 +6,7 @@
 arch: "x86"
 
 # Cloudpak for Data / OLM version to set as default in pipelines
-cpd_version: "4.8.5"
+cpd_version: "5.0.0"
 
 # Cloud pak for Data mode to set as default in pipelines: cpd-enterprise, watsonx
 default_cpd_install: "cpd"

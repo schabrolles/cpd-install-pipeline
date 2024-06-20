@@ -7,7 +7,7 @@
       "default": "x86"
     },
     "cdp_version": {
-      "enum": ["4.8.5", "4.8.4", "4.8.3"],
+      "enum": ["5.0.0.", "4.8.5", "4.8.4"],
       "description": "cpd version to set as default in your pipelines"
     },
     "default_cpd_install": {

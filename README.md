@@ -75,7 +75,7 @@ helm install cpd-install cpd-install-pipeline/cpd-install-pipeline \
 This will:
    - create a project `cpd-install`
    - give the **::“cluster-admin”::** right to the “**pipeline**” service-account of this project
-   - create a tekton task “**olm-utils**” based on the official `olm-utils-v2` from IBM (icr.io)
+   - create a tekton task “**olm-utils**” based on the official `olm-utils-v3` from IBM (icr.io)
    - create a tekton pipeline to install automatically the cloud pak for data `components` you choose
 
 ## Starting the pipeline
@@ -106,7 +106,7 @@ This will open a forms to customize your installation.
 
 - You need to provide at least your **IBM Entitlement key**
 - You can change the version, name of namespaces or storageclass to use
-- [list of available component](https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=information-determining-which-components-install#collect-info-components__all-svcs)
+- [list of available component](https://www.ibm.com/docs/en/cloud-paks/cp-data/5.0.x?topic=information-determining-which-components-install)
 - If you are not running a production service, set **production** to **false**
 - if you don’t have GPUs but still want to deploy watsonx, set **NO_GPU** to **true**
 
@@ -150,7 +150,7 @@ metadata:
 spec:
   params:
   - name: OLM_UTILS_IMAGE
-    value: icr.io/cpopen/cpd/olm-utils-v2
+    value: icr.io/cpopen/cpd/olm-utils-v3
   - name: VERSION
     value: 4.8.5
   - name: COMPONENTS
@@ -205,7 +205,7 @@ spec:
 
   - You need to provide at least your **IBM Entitlement key** ([link to get your key](https://myibm.ibm.com/products-services/containerlibrary))
   - You can change the version, name of namespaces or storageclass to use
-  - [list of available component](https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=information-determining-which-components-install#collect-info-components__all-svcs)
+  - [list of available component](https://www.ibm.com/docs/en/cloud-paks/cp-data/5.0.x?topic=information-determining-which-components-install)
   - If you are not running a production service, set **production** to **false**
   - if you don’t have GPUs but still want to deploy watsonx, set **NO_GPU** to **true**
 

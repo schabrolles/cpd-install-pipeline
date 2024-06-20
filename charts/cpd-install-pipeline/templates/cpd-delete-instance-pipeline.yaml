@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   params:
-    - default: icr.io/cpopen/cpd/olm-utils-v2
+    - default: icr.io/cpopen/cpd/olm-utils-v3
       description: olm-utils images
       name: OLM_UTILS_IMAGE
       type: string
@@ -72,36 +72,6 @@ spec:
             --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
             --delete_all_components=true
 
-            oc delete crd analyticsengines.ae.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd ccs.ccs.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd datarefinery.datarefinery.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd db2oltpservices.databases.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd db2whservices.databases.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd dods.dods.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd ibmcpds.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd notebookruntimes.ws.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd rstudioaddons.rstudio.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd wmlbases.wml.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd ws.ws.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd zenextensions.zen.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd zenservices.zen.cpd.ibm.com \
-            --ignore-not-found=true
-            oc delete crd scheduling.scheduler.spectrumcomputing.ibm.com \
-            --ignore-not-found=true
-            oc delete crd mcschedulings.scheduler.spectrumcomputing.ibm.com \
-            --ignore-not-found=true
       runAfter:
         - components-delete-cr
       taskRef:

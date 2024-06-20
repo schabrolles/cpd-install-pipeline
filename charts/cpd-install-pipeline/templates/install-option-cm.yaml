@@ -7,11 +7,13 @@ data:
   install-options.yml: |
     ###################################################################################
     # Parameters description:
-    # https://www.ibm.com/docs/en/cloud-paks/cp-data/4.8.x?topic=data-specifying-installation-options-services
+    # https://www.ibm.com/docs/en/cloud-paks/cp-data/5.0.x?topic=services-specifying-installation-options#install-platform-param-file__watsonxai-parms
     ###################################################################################
     custom_spec:
       cpd_platform:
         iamIntegration: true
+      watsonx_ai:
+        tuning_disabled: false
       watsonx_governance:
         installType: all
         enableFactsheet: true
