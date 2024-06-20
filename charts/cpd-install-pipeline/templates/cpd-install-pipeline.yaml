@@ -213,14 +213,14 @@ spec:
           echo "non-MCP cluster detected, activating workaround"
           case $platformSpec in 
             KubeVirt )
-              echo "KubeVirt detected, nothing to do"
+              echo "KubeVirt detected, activating workaround"
               echo
               dockerconfigfile=/var/lib/kubelet/config.json
             ;;
             IBMCloud )
               echo "ROKS detected, activating workaround"
               echo
-              dockerconfigfile=/.docker//config.json
+              dockerconfigfile=/.docker/config.json
             ;;
           esac
             oc debug $(oc get node -o name | head -n1) -- chroot /host cat $dockerconfigfile > /tmp/config.json
