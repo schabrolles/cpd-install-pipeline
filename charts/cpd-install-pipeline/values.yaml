@@ -6,7 +6,7 @@
 arch: "x86"
 
 # default olm utils image to use
-default_olm_utils_image: "default_olm_utils_image-v3"
+default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v3"
 
 # Cloudpak for Data / OLM version to set as default in pipelines
 cpd_version: "5.0.0"
