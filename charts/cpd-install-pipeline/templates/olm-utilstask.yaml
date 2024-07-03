@@ -35,13 +35,17 @@ spec:
       - name: "install-options"
         mountPath: /tmp/install-options/install-options.yml
         subPath: install-options.yml
+      {{ if eq .Values.private_registry "" }}
       - name: "airgap-secret"
         mountPath: /opt/ansible/private-registry.json
         subPath: .dockerconfigjson
+      {{ end }}
   volumes:
     - name: "install-options"
       configMap:
         name: "$(params.CP-INSTALL-OPTIONS)"
+    {{ if ne .Values.private_registry "" }}
     - name: "airgap-secret"
       secret:
         secretName: $(params.AIRGAP-SECRET)
+    {{ end  }}
