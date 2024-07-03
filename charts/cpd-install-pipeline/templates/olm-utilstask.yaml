@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   params:
-  - default: icr.io/cpopen/cpd/olm-utils-v3
+  - default: {{ .Values.default_olm_utils_image }}
     description: olm-utils image
     name: OLM_UTILS_IMAGE
     type: string
@@ -16,6 +16,10 @@ spec:
     name: CP-INSTALL-OPTIONS
     type: string
     default: {{ .Release.Name }}-install-option
+  - default: private-registry
+    description: secret which contains credential for private registry
+    name: AIRGAP-SECRET
+    type: string
   steps:
   - image: $(params.OLM_UTILS_IMAGE)
     name: olm-run-cmd
@@ -23,12 +27,21 @@ spec:
       oc whoami --show-server
       OCP_TOKEN=$(oc whoami -t)
       login-to-ocp --token=${OCP_TOKEN} --server=https://kubernetes.default.svc.cluster.local
+
+      [ -d /opt/ansible/.airgap/secrets ] && cp ./private-registry.json /opt/ansible/.airgap/secrets/config.json
+
       $(params.OLM_CMD)
     volumeMounts:
       - name: "install-options"
         mountPath: /tmp/install-options/install-options.yml
         subPath: install-options.yml
+      - name: "airgap-secret"
+        mountPath: /opt/ansible/private-registry.json
+        subPath: .dockerconfigjson
   volumes:
     - name: "install-options"
       configMap:
         name: "$(params.CP-INSTALL-OPTIONS)"
+    - name: "airgap-secret"
+      secret:
+        secretName: $(params.AIRGAP-SECRET)

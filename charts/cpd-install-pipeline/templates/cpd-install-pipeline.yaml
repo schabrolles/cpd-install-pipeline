@@ -1,11 +1,15 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
+  {{ if eq .Values.private_registry "" }}
   name: cpd-install
+  {{ else }}
+  name: cpd-install-airgap
+  {{ end }}
   namespace: {{ .Release.Namespace }}
 spec:
   params:
-    - default: icr.io/cpopen/cpd/olm-utils-v3
+    - default: {{ .Values.default_olm_utils_image }}
       description: olm-utils images
       name: OLM_UTILS_IMAGE
       type: string
@@ -18,7 +22,7 @@ spec:
     {{ else }}
     - default: wml,ws
     {{ end }}
-      description: "cloud-pak components to install (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...)"
+      description: "cloud-pak components to install (wml,watsonx_ai,watsonx_governance,watsonx_data,wca_ansible ...)"
       name: COMPONENTS
       type: string
     {{ if eq .Values.default_cpd_install "watsonx" }}
@@ -49,8 +53,16 @@ spec:
       description: cloud-pak scheduler namespace
       name: PROJECT_SCHEDULING_SERVICE
       type: string
+    {{ if eq .Values.private_registry "" }}
     - name: IBM_ENTITLEMENT_KEY
+      description: your ICR key to access cp.icr.io
       type: string
+    {{ else }}
+    - default: private-registry
+      description: registry-secret containing your private registry credential  
+      name: PRIVATE_REGISTRY_SECRET
+      type: string
+    {{ end }}
     - default: ocs-storagecluster-ceph-rbd
       description: StorageClass for Block
       name: STG_CLASS_BLOCK
@@ -204,8 +216,17 @@ spec:
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
+        {{ if eq .Values.private_registry "" }}
         add-icr-cred-to-global-pull-secret \
         --entitled_registry_key=$(params.IBM_ENTITLEMENT_KEY)
+        {{ else }}
+        mkdir -p pull-secret && \
+        oc extract secret/pull-secret -n openshift-config --to=pull-secret && \
+        mkdir -p private-registry && \
+        oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to=private-registry && \
+        jq -s '.[0] * .[1]' pull-secret/.dockerconfigjson private-registry/.dockerconfigjson > .dockerconfigjson && \
+        oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson
+        {{ end }}
 
         if [[ $(oc get mcp -o name | wc -l) -eq 0 ]]; then
           platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
@@ -225,9 +246,14 @@ spec:
           esac
             oc debug $(oc get node -o name | head -n1) -- chroot /host cat $dockerconfigfile > /tmp/config.json
 
+            {{ if eq .Values.private_registry "" }}
             cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
-            sleep 1
+            {{ else }}
+            oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to=/tmp
+            jq -s '.[0] * .[1]' /tmp/config.json /tmp/.dockerconfigjson > /tmp/config.json.new
+            {{ end }}
 
+            sleep 1
             for n in `oc get node -o name`; do 
               oc adm copy-to-node --copy=/tmp/config.json.new=$dockerconfigfile $n
             done
@@ -457,7 +483,7 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
-    timeout: 3h0m0s
+    timeout: 4h0m0s
   - name: no-gpu-patch
     params:
     - name: OLM_UTILS_IMAGE

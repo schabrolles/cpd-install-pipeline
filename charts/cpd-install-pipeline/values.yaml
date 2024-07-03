@@ -5,11 +5,17 @@
 # specify ppc64le or s390x, empty is x86 (default)
 arch: "x86"
 
+# default olm utils image to use
+default_olm_utils_image: "default_olm_utils_image-v3"
+
 # Cloudpak for Data / OLM version to set as default in pipelines
 cpd_version: "5.0.0"
 
 # Cloud pak for Data mode to set as default in pipelines: cpd-enterprise, watsonx
 default_cpd_install: "cpd"
+
+# Private registry for disconnected (airgap) installation
+private_registry: ""
 
 tektonPatch:
   enabled: true

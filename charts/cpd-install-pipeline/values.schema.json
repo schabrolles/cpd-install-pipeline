@@ -14,6 +14,16 @@
       "enum": ["cpd", "watsonx"],
       "description": "adapt pipeline default parameters for cpd or watsonx"
     },
+    "default_olm_utils_image": {
+      "type": "string",
+       "description": "(optional) default olm utils image to use (without tag)",
+       "default": "icr.io/cpopen/cpd/olm-utils-v3"
+    },
+    "private_registry": {
+       "type": "string",
+        "description": "(optional) private registry to use for cloudpak for data (empty means No-private_registry)",
+        "default": ""
+     },
     "tekton-patch": {
       "properties": {
         "enabled": {

@@ -1,3 +1,11 @@
+{{ if ne .Values.private_registry "" }}
+[ DISCONNECTED / AIRGAP ] Mode Setup.
+-------------------------------------
+/!\ YOU MUST CREATE YOUR PRIVATE REGISTRY SECRET /!\
+```
+oc create secret docker-registry -n {{ .Release.Namespace }} private-registry --docker-username <USERNAME> --docker-password <PASSWORD> --docker-server <REGISTRY-HOSTNAME:PORT>
+```
+{{ end }}
 
 /!\ Check if the tekton-patch pipelineRun job run properly /!\
 This should update the default pipeline timeout value from 1h to 5h
@@ -15,12 +23,16 @@ Your Pipeline to install CPD on your cluster has been deployed.
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  generateName: {{ .Release.Name }}-
+  {{ if eq .Values.private_registry "" }}
+  generateName: cpd-install-
+  {{ else }}
+  generateName: cpd-install-airgap-
+  {{ end }}
   namespace: {{ .Release.Namespace }}
 spec:
   params:
   - name: OLM_UTILS_IMAGE
-    value: icr.io/cpopen/cpd/olm-utils-v3
+    value: {{ .Values.default_olm_utils_image }}
   - name: VERSION
     value: {{ .Values.cpd_version }}
   - name: COMPONENTS
@@ -35,8 +47,13 @@ spec:
     value: ibm-licensing
   - name: PROJECT_SCHEDULING_SERVICE
     value: ibm-scheduler
+  {{ if eq .Values.private_registry "" }}
   - name: IBM_ENTITLEMENT_KEY
     value: >>> PUT YOUR IBM ICR KEY HERE <<<
+  {{ else }}
+  - name: PRIVATE_REGISTRY_SECRET
+    value: private-registry
+  {{ end }}
   - name: STG_CLASS_BLOCK
     value: ocs-storagecluster-ceph-rbd
   - name: STG_CLASS_FILE

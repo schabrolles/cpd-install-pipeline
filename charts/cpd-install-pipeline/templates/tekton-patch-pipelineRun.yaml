@@ -11,7 +11,7 @@ spec:
     name: tekton-patch
   params:
     - name: OLM_UTILS_IMAGE
-      value: icr.io/cpopen/cpd/olm-utils-v3
+      value: {{ .Values.default_olm_utils_image }}
     - name: VERSION
       value: {{ .Values.cpd_version }}
 {{- end -}}

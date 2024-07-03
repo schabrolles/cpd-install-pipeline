@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   params:
-    - default: icr.io/cpopen/cpd/olm-utils-v3
+    - default: {{ .Values.default_olm_utils_image }}
       description: olm-utils images
       name: OLM_UTILS_IMAGE
       type: string
@@ -233,7 +233,7 @@ spec:
       taskRef:
         kind: Task
         name: olm-utils
-      timeout: 3h0m0s
+      timeout: 4h0m0s
     - name: no-gpu-patch
       params:
         - name: OLM_UTILS_IMAGE
