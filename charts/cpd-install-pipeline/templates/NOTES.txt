@@ -47,13 +47,13 @@ spec:
     value: ibm-licensing
   - name: PROJECT_SCHEDULING_SERVICE
     value: ibm-scheduler
-  {{- if not .Values.airgap.enabled -}}
+  {{ if not .Values.airgap.enabled -}}
   - name: IBM_ENTITLEMENT_KEY
     value: >>> PUT YOUR IBM ICR KEY HERE <<<
-  {{- else -}}
+  {{ else -}}
   - name: PRIVATE_REGISTRY_SECRET
     value: private-registry
-  {{- end -}}
+  {{ end -}}
   - name: STG_CLASS_BLOCK
     value: ocs-storagecluster-ceph-rbd
   - name: STG_CLASS_FILE
