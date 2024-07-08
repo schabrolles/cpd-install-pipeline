@@ -1,5 +1,5 @@
 {{ if .Values.airgap.enabled }}
-[ DISCONNECTED / AIRGAP ] Mode Setup.
+[ DISCONNECTED / AIRGAP ] Mode Setup
 -------------------------------------
 /!\ YOU MUST CREATE YOUR PRIVATE REGISTRY SECRET /!\
 ```
