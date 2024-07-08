@@ -13,7 +13,7 @@
     },
     "default_cpd_install": {
       "enum": ["cpd", "watsonx"],
-      "description": "adapt pipeline default parameters for cpd or watsonx"
+      "description": "adapt pipeline default parameter for cpd or watsonx"
     },
     "default_olm_utils_image": {
       "type": "string",
