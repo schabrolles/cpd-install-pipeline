@@ -1,10 +1,10 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  {{ if eq .Values.private_registry_secret "" }}
-  name: cpd-install
-  {{ else }}
+  {{ if eq .Values.airgap.enabled "" }}
   name: cpd-install-airgap
+  {{ else }}
+  name: cpd-install
   {{ end }}
   namespace: {{ .Release.Namespace }}
 spec:
@@ -53,7 +53,7 @@ spec:
       description: cloud-pak scheduler namespace
       name: PROJECT_SCHEDULING_SERVICE
       type: string
-    {{ if eq .Values.private_registry_secret "" }}
+    {{ if eq .Values.airgap.private_registry_secret "" }}
     - name: IBM_ENTITLEMENT_KEY
       description: your ICR key to access cp.icr.io
       type: string
@@ -216,7 +216,7 @@ spec:
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
-        {{ if eq .Values.private_registry_secret "" }}
+        {{ if eq .Values.airgap.private_registry_secret "" }}
         add-icr-cred-to-global-pull-secret \
         --entitled_registry_key=$(params.IBM_ENTITLEMENT_KEY)
         {{ else }}
@@ -246,7 +246,7 @@ spec:
           esac
             oc debug $(oc get node -o name | head -n1) -- chroot /host cat $dockerconfigfile > /tmp/config.json
 
-            {{ if eq .Values.private_registry_secret "" }}
+            {{ if eq .Values.airgap.private_registry_secret "" }}
             cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
             {{ else }}
             oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to=/tmp

@@ -1,4 +1,4 @@
-{{ if ne .Values.private_registry_secret "" }}
+{{ if ne .Values.airgap.private_registry_secret "" }}
 [ DISCONNECTED / AIRGAP ] Mode Setup.
 -------------------------------------
 /!\ YOU MUST CREATE YOUR PRIVATE REGISTRY SECRET /!\
@@ -23,11 +23,11 @@ Your Pipeline to install CPD on your cluster has been deployed.
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  {{ if eq .Values.private_registry_secret "" }}
+  {{ if eq .Values.airgap.private_registry_secret "" -}}
   generateName: cpd-install-
-  {{ else }}
+  {{ else -}}
   generateName: cpd-install-airgap-
-  {{ end }}
+  {{ end -}}
   namespace: {{ .Release.Namespace }}
 spec:
   params:
@@ -47,13 +47,13 @@ spec:
     value: ibm-licensing
   - name: PROJECT_SCHEDULING_SERVICE
     value: ibm-scheduler
-  {{ if eq .Values.private_registry_secret "" }}
+  {{- if eq .Values.airgap.private_registry_secret "" -}}
   - name: IBM_ENTITLEMENT_KEY
     value: >>> PUT YOUR IBM ICR KEY HERE <<<
-  {{ else }}
+  {{- else -}}
   - name: PRIVATE_REGISTRY_SECRET
     value: private-registry
-  {{ end }}
+  {{- end -}}
   - name: STG_CLASS_BLOCK
     value: ocs-storagecluster-ceph-rbd
   - name: STG_CLASS_FILE
