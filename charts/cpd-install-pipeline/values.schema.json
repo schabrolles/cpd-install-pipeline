@@ -19,9 +19,9 @@
        "description": "(optional) default olm utils image to use (without tag)",
        "default": "icr.io/cpopen/cpd/olm-utils-v3"
     },
-    "private_registry": {
+    "private_registry_secret": {
        "type": "string",
-        "description": "(optional) private registry to use for cloudpak for data (empty means No-private_registry)",
+        "description": "(optional) docker secret for the private registry to use for cloudpak for data (leave empty for No-private_registry)",
         "default": ""
      },
     "tekton-patch": {
