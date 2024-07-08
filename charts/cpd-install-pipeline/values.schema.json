@@ -20,6 +20,7 @@
        "default": "icr.io/cpopen/cpd/olm-utils-v3"
     },
     "airgap_mode": {
+      "description": "Installation using a private registry",
       "properties": {
         "enabled": {
           "type": "boolean",
@@ -28,8 +29,8 @@
         },
         "private_registry_secret": {
           "type": "string",
-          "description": "(optional) docker secret for the private registry to use for cloudpak for data when airgap_mode is enabled",
-          "default": ""
+          "description": "docker secret for the private registry which contain cp.icr.io mirror (when airgap_mode is enabled)",
+          "default": "private_registry_secret"
         }
       }
     },
