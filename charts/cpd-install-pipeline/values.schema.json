@@ -8,7 +8,8 @@
     },
     "cdp_version": {
       "enum": ["5.0.0", "4.8.5", "4.8.4"],
-      "description": "cpd version to set as default in your pipelines"
+      "description": "cpd version to set as default in your pipelines",
+      "default": "5.0.0"
     },
     "default_cpd_install": {
       "enum": ["cpd", "watsonx"],
@@ -20,7 +21,7 @@
        "default": "icr.io/cpopen/cpd/olm-utils-v3"
     },
     "airgap_mode": {
-      "description": "Installation using a private registry",
+      "description": "Disconnected installation using a private registry",
       "properties": {
         "enabled": {
           "type": "boolean",
@@ -35,6 +36,7 @@
       }
     },
     "tekton-patch": {
+      "description": "cpd-install-pipeline post-installation",
       "properties": {
         "enabled": {
           "type": "boolean",
