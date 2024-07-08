@@ -17,7 +17,7 @@ default_cpd_install: "cpd"
 # Private registry docker secret for disconnected (airgap) installation
 airgap:
   enabled: false
-  private_registry_secret: ""
+  private_registry_secret: "private_registry_secret"
 
 tektonPatch:
   enabled: true

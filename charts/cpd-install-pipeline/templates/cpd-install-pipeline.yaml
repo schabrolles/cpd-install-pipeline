@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  {{ if eq .Values.airgap.enabled "" }}
+  {{ if eq .Values.airgap.enabled }}
   name: cpd-install-airgap
   {{ else }}
   name: cpd-install
