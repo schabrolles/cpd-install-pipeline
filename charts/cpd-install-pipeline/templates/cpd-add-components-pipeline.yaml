@@ -1,10 +1,20 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
+  {{ if .Values.airgap.enabled }}
+  name: cpd-add-components-airgap
+  {{ else }}
   name: cpd-add-components
+  {{ end }}
   namespace: {{ .Release.Namespace }}
 spec:
   params:
+    {{ if .Values.airgap.enabled }}
+    - default: private-registry
+      description: registry-secret containing your private registry credential  
+      name: PRIVATE_REGISTRY_SECRET
+      type: string
+    {{ end }}
     - default: {{ .Values.default_olm_utils_image }}
       description: olm-utils images
       name: OLM_UTILS_IMAGE

@@ -9,6 +9,12 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   params:
+    {{ if .Values.airgap.enabled }}
+    - default: private-registry
+      description: registry-secret containing your private registry credential  
+      name: PRIVATE_REGISTRY_SECRET
+      type: string
+    {{ end }}
     - default: {{ .Values.default_olm_utils_image }}
       description: olm-utils images
       name: OLM_UTILS_IMAGE
@@ -53,12 +59,7 @@ spec:
       description: cloud-pak scheduler namespace
       name: PROJECT_SCHEDULING_SERVICE
       type: string
-    {{ if .Values.airgap.enabled }}
-    - default: private-registry
-      description: registry-secret containing your private registry credential  
-      name: PRIVATE_REGISTRY_SECRET
-      type: string
-    {{ else }}
+    {{ if not .Values.airgap.enabled }}
     - name: IBM_ENTITLEMENT_KEY
       description: your ICR key to access cp.icr.io
       type: string
