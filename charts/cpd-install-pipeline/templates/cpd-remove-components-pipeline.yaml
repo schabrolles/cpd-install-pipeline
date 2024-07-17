@@ -48,7 +48,7 @@ spec:
             delete-cr \
             --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
             --components=$(params.COMPONENTS) \
-            --include_dependency=true
+            --include_dependency=false
       taskRef:
         kind: Task
         name: olm-utils
