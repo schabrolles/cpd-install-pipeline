@@ -21,6 +21,7 @@
        "default": "icr.io/cpopen/cpd/olm-utils-v3"
     },
     "storageClass": {
+      "description": "Set the default StorageClass to use in the cpd-install pipelines",
       "properties": {
         "block": {
           "type": "string",
