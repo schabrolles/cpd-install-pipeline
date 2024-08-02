@@ -1,0 +1,292 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  {{ if .Values.airgap.enabled }}
+  name: cpd-upgrade-airgap
+  {{ else }}
+  name: cpd-upgrade
+  {{ end }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+   {{ if .Values.airgap.enabled }}
+    - default: private-registry
+      description: registry-secret containing your private registry credential  
+      name: PRIVATE_REGISTRY_SECRET
+      type: string
+    {{ end }}
+    - default: {{ .Values.default_olm_utils_image }}
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: {{ .Values.cpd_version }}
+      description: cloud-pak for data version
+      name: VERSION
+      type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: watsonx_ai,watsonx_governance,watsonx_data
+    {{ else }}
+    - default: wml,ws
+    {{ end }}
+      description: "cloud-pak components to install (wml,watsonx_ai,watsonx_governance,watsonx_data,wca_ansible ...)"
+      name: COMPONENTS
+      type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: watsonx
+    {{ else }}
+    - default: cpd
+    {{ end }}
+      description: cloud-pak operand namspace
+      name: PROJECT_CPD_INST_OPERANDS
+      type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: watsonx-operators
+    {{ else }}
+    - default: cpd-operators
+    {{ end }}
+      description: cloud-pak operators namspace
+      name: PROJECT_CPD_INST_OPERATORS
+      type: string
+    - default: ibm-cert-manager
+      description: cloud-pak ibm-cert-manager namespace
+      name: PROJECT_CERT_MANAGER
+      type: string
+    - default: ibm-licensing
+      description: cloud-pak ibm-licensing namespace
+      name: PROJECT_LICENSE_SERVICE
+      type: string
+    - default: ibm-scheduler
+      description: cloud-pak scheduler namespace
+      name: PROJECT_SCHEDULING_SERVICE
+      type: string
+    {{ if not .Values.airgap.enabled }}
+    - name: IBM_ENTITLEMENT_KEY
+      description: your ICR key to access cp.icr.io
+      type: string
+    {{ end }}
+    - default: {{ .Values.storageClass.block }}
+      description: StorageClass for Block
+      name: STG_CLASS_BLOCK
+      type: string
+    - default: {{ .Values.storageClass.file }}
+      description: StorageClass for Files
+      name: STG_CLASS_FILE
+      type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: watsonx-ai
+    {{ else }}
+    - default: cpd-enterprise
+    {{ end }}
+      description: "Entitlement, choose between: cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data, watsonx-gov-model-management, watsonx-gov-risk-compliance"
+      name: ENTITLEMENT
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["cpd-enterprise", "cpd-standard", "watsonx-ai", "watsonx-data", "watsonx-gov-model-management", "watsonx-gov-risk-compliance"]
+      {{ end }}
+    - default: "false"
+      description: Set [true] to enable ibm-scheduler
+      name: SCHEDULER
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }}
+    - name: ACCEPT_LICENCE
+      description: 'Please Accept LICENCE (set [true])'
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
+    - default: "true"
+      description: 'Set [false] for non-prod environment'
+      name: PRODUCTION
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
+    - name: APPLY_MACHINECONFIG
+      description: Apply KubeletConfig for cloud-pak-for-data (PidsLimit)
+      type: string
+      default: "true"
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
+    - name: DB2_LIMITED_PRIV
+      description: Run DB2 pod in Limited Privilege mode
+      type: string
+      default: "false"
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }}
+    - default: "true"
+      description: Set [true] to download CASE as OCI, [false] to get CASE from Github.
+      name: CASE_FROM_OCI
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }}
+    - default: "cp.icr.io/cpopen"
+      description: only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages 
+      name: OCI_LOCATION
+      type: "string"
+    - default: "false"
+      description: (for watsonx.ai) Set [true] to preform the installation without GPU.
+      name: NO_GPU
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
+    - default: "{{ .Release.Name }}-install-option"
+      description: configMap which contains cloud pak install-options
+      name: CP-INSTALL-OPTIONS
+      type: string
+  tasks:
+    - name: apply-cluster-components
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            apply-cluster-components \
+            --release=$(params.VERSION) \
+            --license_acceptance=$(params.ACCEPT_LICENCE) \
+            --cert_manager_ns=$(params.PROJECT_CERT_MANAGER) \
+            --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
+            --case_download=true \
+            --from_oci=$(params.CASE_FROM_OCI) \
+            --oci_location=$(params.OCI_LOCATION)
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 1h0m0s
+    - name: setup-inst-topology
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            setup-instance-topology \
+            --release=$(params.VERSION) \
+            --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --license_acceptance=$(params.ACCEPT_LICENCE) \
+            --block_storage_class=$(params.STG_CLASS_BLOCK) \
+            --case_download=true \
+            --from_oci=$(params.CASE_FROM_OCI) \
+            --oci_location=$(params.OCI_LOCATION)
+      runAfter:
+        - apply-cluster-components
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: cpd-platform-apply-olm
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            apply-olm \
+            --release=$(params.VERSION) \
+            --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+            --components=cpd_platform \
+            --case_download=true \
+            --from_oci=$(params.CASE_FROM_OCI) \
+            --oci_location=$(params.OCI_LOCATION) \
+            --upgrade=true
+      runAfter:
+        - setup-inst-topology
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: cpd-platform-apply-cr
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            apply-cr \
+            --release=$(params.VERSION) \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --components=cpd_platform \
+            --block_storage_class=$(params.STG_CLASS_BLOCK) \
+            --file_storage_class=$(params.STG_CLASS_FILE) \
+            --license_acceptance=$(params.ACCEPT_LICENCE) \
+            --param-file=/tmp/install-options/install-options.yml \
+            --upgrade=true
+      runAfter:
+        - cpd-platform-apply-olm
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 1h30m0s
+    - name: component-apply-olm
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
+
+            apply-olm \
+            --release=$(params.VERSION) \
+            --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+            --components=$COMPONENTS \
+            --case_download=true \
+            --from_oci=$(params.CASE_FROM_OCI) \
+            --oci_location=$(params.OCI_LOCATION) \
+            --upgrade=true
+      runAfter:
+        - cpd-platform-apply-olm
+      taskRef:
+        kind: Task
+        name: olm-utils
+    - name: components-apply-cr
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+        - name: OLM_CMD
+          value: |-
+            COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
+
+            apply-cr \
+            --release=$(params.VERSION) \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --components=$COMPONENTS \
+            --block_storage_class=$(params.STG_CLASS_BLOCK) \
+            --file_storage_class=$(params.STG_CLASS_FILE) \
+            --license_acceptance=$(params.ACCEPT_LICENCE) \
+            --param-file=/tmp/install-options/install-options.yml \
+            --upgrade=true
+      runAfter:
+        - cpd-platform-apply-cr
+        - component-apply-olm
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 4h0m0s
+    - name: get-cr-status
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+        - name: OLM_CMD
+          value: |-
+            get-cr-status \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+        - name: CP-INSTALL-OPTIONS
+          value: $(params.CP-INSTALL-OPTIONS)
+      runAfter:
+        - components-apply-cr
+      taskRef:
+        kind: Task
+        name: olm-utils

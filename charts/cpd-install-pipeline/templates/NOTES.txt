@@ -55,9 +55,9 @@ spec:
     value: private-registry
   {{ end -}}
   - name: STG_CLASS_BLOCK
-    value: ocs-storagecluster-ceph-rbd
+    value: {{ .Values.storageClass.block }}
   - name: STG_CLASS_FILE
-    value: ocs-storagecluster-cephfs
+    value: {{ .Values.storageClass.file }}
   - name: ENTITLEMENT
     value: cpd-enterprise
   - name: SCHEDULER

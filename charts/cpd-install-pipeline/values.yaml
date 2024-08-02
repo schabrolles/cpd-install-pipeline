@@ -9,10 +9,14 @@ arch: "x86"
 default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v3"
 
 # Cloudpak for Data / OLM version to set as default in pipelines
-cpd_version: "5.0.0"
+cpd_version: "5.0.1"
 
 # Cloud pak for Data mode to set as default in pipelines: cpd-enterprise, watsonx
 default_cpd_install: "cpd"
+
+storageClass:
+  block: ocs-storagecluster-ceph-rbd
+  file: ocs-storagecluster-cephfs
 
 # Private registry docker secret for disconnected (airgap) installation
 airgap:

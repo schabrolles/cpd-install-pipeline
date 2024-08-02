@@ -7,9 +7,9 @@
       "default": "x86"
     },
     "cdp_version": {
-      "enum": ["5.0.0", "4.8.5", "4.8.4"],
+      "enum": ["5.0.1", "5.0.0", "4.8.5", "4.8.4"],
       "description": "cpd version to set as default in your pipelines",
-      "default": "5.0.0"
+      "default": "5.0.1"
     },
     "default_cpd_install": {
       "enum": ["cpd", "watsonx"],
@@ -19,6 +19,20 @@
       "type": "string",
        "description": "(optional) default olm utils image to use (without tag)",
        "default": "icr.io/cpopen/cpd/olm-utils-v3"
+    },
+    "storageClass": {
+      "properties": {
+        "block": {
+          "type": "string",
+          "description": "StorageClass for Block",
+          "default": "ocs-storagecluster-ceph-rbd"
+        },
+        "file": {
+          "type": "string",
+          "description": "StorageClass for Block",
+          "default": "ocs-storagecluster-cephfs"
+        }
+      }
     },
     "airgap_mode": {
       "description": "Disconnected installation using a private registry",

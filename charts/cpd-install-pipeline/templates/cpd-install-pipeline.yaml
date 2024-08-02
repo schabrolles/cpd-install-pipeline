@@ -64,11 +64,11 @@ spec:
       description: your ICR key to access cp.icr.io
       type: string
     {{ end }}
-    - default: ocs-storagecluster-ceph-rbd
+    - default: {{ .Values.storageClass.block }}
       description: StorageClass for Block
       name: STG_CLASS_BLOCK
       type: string
-    - default: ocs-storagecluster-cephfs
+    - default: {{ .Values.storageClass.file }}
       description: StorageClass for Files
       name: STG_CLASS_FILE
       type: string
