@@ -14,6 +14,7 @@ data:
         iamIntegration: true
       watsonx_ai:
         tuning_disabled: false
+        lite_install: false
       watsonx_governance:
         installType: all
         enableFactsheet: true

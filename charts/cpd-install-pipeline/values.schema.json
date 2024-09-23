@@ -7,9 +7,9 @@
       "default": "x86"
     },
     "cdp_version": {
-      "enum": ["5.0.1", "5.0.0", "4.8.5", "4.8.4"],
+      "enum": ["5.0.2", "5.0.1", "5.0.0", "4.8.5"],
       "description": "cpd version to set as default in your pipelines",
-      "default": "5.0.1"
+      "default": "5.0.2"
     },
     "default_cpd_install": {
       "enum": ["cpd", "watsonx"],
