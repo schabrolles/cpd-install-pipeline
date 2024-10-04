@@ -173,7 +173,7 @@ spec:
       - name: OLM_CMD
         value: |-
           if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-            apply-db2-kubelet
+            apply-db2-kubelet --self_managed=true
           else
             echo "No MachineConfig Found ..."
             platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
