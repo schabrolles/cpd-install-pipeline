@@ -55,23 +55,13 @@ spec:
       params:
         - name: OLM_UTILS_IMAGE
           value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
-        - name: OLM_CM
-          value: |-
-            oc project $(params.PROJECT_CPD_INST_OPERATORS)
-
-            delete-olm-artifacts \
-            --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
-            --delete_all_components=true
         - name: CP-INSTALL-OPTIONS
           value: "{{ .Release.Name }}-install-option"
         - name: OLM_CMD
           value: |-
-            oc project $(params.PROJECT_CPD_INST_OPERATORS)
-
             delete-olm-artifacts \
-            --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
             --delete_all_components=true
-
       runAfter:
         - components-delete-cr
       taskRef:
