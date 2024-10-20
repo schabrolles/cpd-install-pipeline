@@ -20,6 +20,17 @@ spec:
     description: secret which contains credential for private registry
     name: AIRGAP-SECRET
     type: string
+  {{ if .Values.proxy.enabled }}
+  stepTemplate:
+    computeResources: {}
+    env:
+      - name: HTTP_PROXY
+        value: {{ .Values.proxy.http_proxy }}
+      - name: HTTPS_PROXY
+        value: {{ .Values.proxy.https_proxy }}
+      - name: NO_PROXY
+        value: {{ .Values.proxy.no_proxy }}
+  {{ end }}
   steps:
   - image: $(params.OLM_UTILS_IMAGE)
     name: olm-run-cmd

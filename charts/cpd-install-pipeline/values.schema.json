@@ -35,7 +35,31 @@
         }
       }
     },
-    "airgap_mode": {
+    "proxy": {
+      "description": "Internet connection via proxy",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Activate proxy configuration for olm_tasks",
+          "default": false
+        },
+        "http_proxy": {
+          "type": "string",
+          "description": "proxy to use for http connections",
+          "default": "http://user:password@IP:port"
+        },
+        "https_proxy": {
+          "type": "string",
+          "description": "proxy to use for https connections"
+        },
+        "no_proxy": {
+          "type": "string",
+          "description": "IP, networks and domain which will should be reached directly (without proxy)",
+          "default": "localhost,127.0.0.1,.svc,.cluster.local"
+        }
+      }
+    },
+    "airgap": {
       "description": "Disconnected installation using a private registry",
       "properties": {
         "enabled": {

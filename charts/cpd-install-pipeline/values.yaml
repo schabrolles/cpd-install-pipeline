@@ -18,6 +18,13 @@ storageClass:
   block: ocs-storagecluster-ceph-rbd
   file: ocs-storagecluster-cephfs
 
+# Proxy configuration
+proxy:
+  enabled: false
+  http_proxy: http://user:password@IP:port
+  https_proxy: http://user:password@IP:port
+  no_proxy: "localhost,127.0.0.1,.svc,.cluster.local"
+
 # Private registry docker secret for disconnected (airgap) installation
 airgap:
   enabled: false

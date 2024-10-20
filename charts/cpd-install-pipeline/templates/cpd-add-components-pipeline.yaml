@@ -67,10 +67,10 @@ spec:
       description: Run DB2 pod in Limited Privilege mode
       name: DB2_LIMITED_PRIV
       type: string
-    - default: 'true'
-      description: 'Set [true] to download CASE as OCI, [false] to get CASE from Github.'
-      name: CASE_FROM_OCI
+    - name: CASE_FROM_OCI
+      description: Set [true] to download CASE as OCI, [false] to get CASE from Github.
       type: string
+      {{ if .Values.proxy.enabled }}default: "false"{{ else }}default: "true"{{ end }}
     - default: cp.icr.io/cpopen
       description: 'only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages'
       name: OCI_LOCATION
