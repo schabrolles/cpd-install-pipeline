@@ -9,7 +9,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   params:
-   {{ if .Values.airgap.enabled }}
+    {{ if .Values.airgap.enabled }}
     - default: private-registry
       description: registry-secret containing your private registry credential  
       name: PRIVATE_REGISTRY_SECRET
