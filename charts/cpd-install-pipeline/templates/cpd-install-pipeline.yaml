@@ -328,6 +328,31 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
+  {{- if semverCompare ">=5.1.0" .Values.cpd_version }}
+  - name: setup-instance
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        setup-instance \
+        --release=$(params.VERSION) \
+        --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --license_acceptance=$(params.ACCEPT_LICENCE) \
+        --block_storage_class=$(params.STG_CLASS_BLOCK) \
+        --case_download=true \
+        --run_storage_tests=true \
+        --from_oci=$(params.CASE_FROM_OCI) \
+        --oci_location=$(params.OCI_LOCATION)
+    runAfter:
+    - authorize-inst-topology
+    taskRef:
+      kind: Task
+      name: olm-utils
+  {{- else }}
   - name: setup-inst-topology
     params:
     - name: OLM_UTILS_IMAGE
@@ -350,6 +375,7 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
+  {{- end }}
   - name: cpd-platform-apply-olm
     params:
     - name: OLM_UTILS_IMAGE
@@ -366,7 +392,11 @@ spec:
         --from_oci=$(params.CASE_FROM_OCI) \
         --oci_location=$(params.OCI_LOCATION)
     runAfter:
+    {{- if semverCompare ">=5.1.0" .Values.cpd_version }}
+    - setup-instance
+    {{- else }}
     - setup-inst-topology
+    {{- end }}
     taskRef:
       kind: Task
       name: olm-utils
@@ -388,7 +418,11 @@ spec:
           namespace: $(params.PROJECT_CPD_INST_OPERATORS)
         EOF
     runAfter:
+    {{- if semverCompare ">=5.1.0" .Values.cpd_version }}
+    - setup-instance
+    {{- else }}
     - setup-inst-topology
+    {{- end }}
     taskRef:
       kind: Task
       name: olm-utils
