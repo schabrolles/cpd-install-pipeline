@@ -47,10 +47,12 @@ spec:
       description: cloud-pak operators namspace
       name: PROJECT_CPD_INST_OPERATORS
       type: string
+    {{- if semverCompare "<=5.1.0" .Values.cpd_version }}
     - default: ibm-cert-manager
       description: cloud-pak ibm-cert-manager namespace
       name: PROJECT_CERT_MANAGER
       type: string
+    {{- end }}
     - default: ibm-licensing
       description: cloud-pak ibm-licensing namespace
       name: PROJECT_LICENSE_SERVICE
@@ -273,7 +275,9 @@ spec:
         apply-cluster-components \
         --release=$(params.VERSION) \
         --license_acceptance=$(params.ACCEPT_LICENCE) \
+        {{- if semverCompare "<=5.1.0" .Values.cpd_version }} 
         --cert_manager_ns=$(params.PROJECT_CERT_MANAGER) \
+        {{- end }}
         --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
         --case_download=true \
         --from_oci=$(params.CASE_FROM_OCI) \
@@ -376,6 +380,7 @@ spec:
       kind: Task
       name: olm-utils
   {{- end }}
+  {{- if semverCompare "<=5.1.0" .Values.cpd_version }}
   - name: cpd-platform-apply-olm
     params:
     - name: OLM_UTILS_IMAGE
@@ -400,6 +405,7 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
+  {{- end }}
   - name: set-db2-limited-privs
     params:
     - name: OLM_UTILS_IMAGE
@@ -432,6 +438,7 @@ spec:
         values:
         - "true"
         - "yes"
+  {{- if semverCompare "<=5.1.0" .Values.cpd_version }}
   - name: cpd-platform-apply-cr
     params:
     - name: OLM_UTILS_IMAGE
@@ -455,6 +462,7 @@ spec:
       kind: Task
       name: olm-utils
     timeout: 1h30m0s
+  {{- end }}
   - name: component-apply-olm
     params:
     - name: OLM_UTILS_IMAGE
@@ -473,7 +481,9 @@ spec:
         --from_oci=$(params.CASE_FROM_OCI) \
         --oci_location=$(params.OCI_LOCATION)
     runAfter:
+    {{- if semverCompare "<=5.1.0" .Values.cpd_version }}
     - cpd-platform-apply-olm
+    {{- end }} 
     - set-db2-limited-privs
     taskRef:
       kind: Task
@@ -513,7 +523,9 @@ spec:
         --license_acceptance=$(params.ACCEPT_LICENCE) \
         --param-file=/tmp/install-options/install-options.yml
     runAfter:
+    {{- if semverCompare "<=5.1.0" .Values.cpd_version }}
     - cpd-platform-apply-cr
+    {{- end }}
     - component-apply-olm
     taskRef:
       kind: Task
@@ -548,7 +560,9 @@ spec:
         oc delete pod -n $(params.PROJECT_CPD_INST_OPERATORS) -l app.kubernetes.io/name=ibm-cpd-watsonx-ai-operator --ignore-not-found
 
     runAfter:
+    {{- if semverCompare "<=5.1.0" .Values.cpd_version }}
     - cpd-platform-apply-cr
+    {{- end }}
     - component-apply-olm
     taskRef:
       kind: Task
