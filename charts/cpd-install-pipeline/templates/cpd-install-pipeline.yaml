@@ -271,17 +271,26 @@ spec:
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
+      {{- if semverCompare "<=5.1.0" .Values.cpd_version }}
       value: |-
         apply-cluster-components \
         --release=$(params.VERSION) \
         --license_acceptance=$(params.ACCEPT_LICENCE) \
-        {{- if semverCompare "<=5.1.0" .Values.cpd_version }} 
         --cert_manager_ns=$(params.PROJECT_CERT_MANAGER) \
-        {{- end }}
         --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
         --case_download=true \
         --from_oci=$(params.CASE_FROM_OCI) \
         --oci_location=$(params.OCI_LOCATION)
+      {{- else }}
+      value: |-
+        apply-cluster-components \
+        --release=$(params.VERSION) \
+        --license_acceptance=$(params.ACCEPT_LICENCE) \
+        --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
+        --case_download=true \
+        --from_oci=$(params.CASE_FROM_OCI) \
+        --oci_location=$(params.OCI_LOCATION)
+      {{- end }}
     runAfter:
     - update-pull-secret
     - kubelet-pod-pids-limit
