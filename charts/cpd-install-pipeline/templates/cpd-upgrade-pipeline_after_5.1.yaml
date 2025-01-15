@@ -1,3 +1,4 @@
+{{- if semverCompare ">=5.1.0" .Values.cpd_version -}}
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
@@ -47,10 +48,6 @@ spec:
       description: cloud-pak operators namspace
       name: PROJECT_CPD_INST_OPERATORS
       type: string
-    - default: ibm-cert-manager
-      description: cloud-pak ibm-cert-manager namespace
-      name: PROJECT_CERT_MANAGER
-      type: string
     - default: ibm-licensing
       description: cloud-pak ibm-licensing namespace
       name: PROJECT_LICENSE_SERVICE
@@ -72,6 +69,10 @@ spec:
       description: StorageClass for Files
       name: STG_CLASS_FILE
       type: string
+    - name: STORAGE_TESTS
+      description: "run test performance validation against Provided StorageClass"
+      type: string
+      default: "false"
     {{ if eq .Values.default_cpd_install "watsonx" }}
     - default: watsonx-ai
     {{ else }}
@@ -151,7 +152,6 @@ spec:
             apply-cluster-components \
             --release=$(params.VERSION) \
             --license_acceptance=$(params.ACCEPT_LICENCE) \
-            --cert_manager_ns=$(params.PROJECT_CERT_MANAGER) \
             --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
             --case_download=true \
             --from_oci=$(params.CASE_FROM_OCI) \
@@ -160,7 +160,7 @@ spec:
         kind: Task
         name: olm-utils
       timeout: 1h0m0s
-    - name: setup-inst-topology
+    - name: setup-instance
       params:
         - name: OLM_UTILS_IMAGE
           value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
@@ -176,56 +176,14 @@ spec:
             --block_storage_class=$(params.STG_CLASS_BLOCK) \
             --case_download=true \
             --from_oci=$(params.CASE_FROM_OCI) \
-            --oci_location=$(params.OCI_LOCATION)
+            --oci_location=$(params.OCI_LOCATION) \
+            --run_storage_tests=$(params.STORAGE_TESTS)
       runAfter:
         - apply-cluster-components
       taskRef:
         kind: Task
         name: olm-utils
-    - name: cpd-platform-apply-olm
-      params:
-        - name: OLM_UTILS_IMAGE
-          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
-        - name: CP-INSTALL-OPTIONS
-          value: $(params.CP-INSTALL-OPTIONS)
-        - name: OLM_CMD
-          value: |-
-            apply-olm \
-            --release=$(params.VERSION) \
-            --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
-            --components=cpd_platform \
-            --case_download=true \
-            --from_oci=$(params.CASE_FROM_OCI) \
-            --oci_location=$(params.OCI_LOCATION) \
-            --upgrade=true
-      runAfter:
-        - setup-inst-topology
-      taskRef:
-        kind: Task
-        name: olm-utils
-    - name: cpd-platform-apply-cr
-      params:
-        - name: OLM_UTILS_IMAGE
-          value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
-        - name: CP-INSTALL-OPTIONS
-          value: $(params.CP-INSTALL-OPTIONS)
-        - name: OLM_CMD
-          value: |-
-            apply-cr \
-            --release=$(params.VERSION) \
-            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
-            --components=cpd_platform \
-            --block_storage_class=$(params.STG_CLASS_BLOCK) \
-            --file_storage_class=$(params.STG_CLASS_FILE) \
-            --license_acceptance=$(params.ACCEPT_LICENCE) \
-            --param-file=/tmp/install-options/install-options.yml \
-            --upgrade=true
-      runAfter:
-        - cpd-platform-apply-olm
-      taskRef:
-        kind: Task
-        name: olm-utils
-      timeout: 1h30m0s
+  
     - name: component-apply-olm
       params:
         - name: OLM_UTILS_IMAGE
@@ -245,7 +203,7 @@ spec:
             --oci_location=$(params.OCI_LOCATION) \
             --upgrade=true
       runAfter:
-        - cpd-platform-apply-olm
+        - setup-instance
       taskRef:
         kind: Task
         name: olm-utils
@@ -269,7 +227,6 @@ spec:
             --param-file=/tmp/install-options/install-options.yml \
             --upgrade=true
       runAfter:
-        - cpd-platform-apply-cr
         - component-apply-olm
       taskRef:
         kind: Task
@@ -290,3 +247,4 @@ spec:
       taskRef:
         kind: Task
         name: olm-utils
+{{- end -}}

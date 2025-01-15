@@ -271,7 +271,7 @@ spec:
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
-      {{- if semverCompare "<=5.1.0" .Values.cpd_version }}
+      {{- if semverCompare "<5.1.0" .Values.cpd_version }}
       value: |-
         apply-cluster-components \
         --release=$(params.VERSION) \
@@ -388,8 +388,6 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
-
-
   {{- end }}
   {{- if semverCompare "<5.1.0" .Values.cpd_version }}
   - name: cpd-platform-apply-olm
