@@ -1,0 +1,528 @@
+{{- if semverCompare ">=5.1.0" .Values.cpd_version }}
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  {{ if .Values.airgap.enabled }}
+  name: cpd-install-airgap
+  {{ else }}
+  name: cpd-install
+  {{ end }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+    {{ if .Values.airgap.enabled }}
+    - default: private-registry
+      description: registry-secret containing your private registry credential  
+      name: PRIVATE_REGISTRY_SECRET
+      type: string
+    {{ end }}
+    - default: {{ .Values.default_olm_utils_image }}
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: {{ .Values.cpd_version }}
+      description: cloud-pak for data version
+      name: VERSION
+      type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: watsonx_ai,watsonx_governance,watsonx_data
+    {{ else }}
+    - default: wml,ws
+    {{ end }}
+      description: "cloud-pak components to install (wml,watsonx_ai,watsonx_governance,watsonx_data,wca_ansible ...)"
+      name: COMPONENTS
+      type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: watsonx
+    {{ else }}
+    - default: cpd
+    {{ end }}
+      description: cloud-pak operand namspace
+      name: PROJECT_CPD_INST_OPERANDS
+      type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: watsonx-operators
+    {{ else }}
+    - default: cpd-operators
+    {{ end }}
+      description: cloud-pak operators namspace
+      name: PROJECT_CPD_INST_OPERATORS
+      type: string
+    - default: ibm-licensing
+      description: cloud-pak ibm-licensing namespace
+      name: PROJECT_LICENSE_SERVICE
+      type: string
+    - default: ibm-scheduler
+      description: cloud-pak scheduler namespace
+      name: PROJECT_SCHEDULING_SERVICE
+      type: string
+    {{ if not .Values.airgap.enabled }}
+    - name: IBM_ENTITLEMENT_KEY
+      description: your ICR key to access cp.icr.io
+      type: string
+    {{ end }}
+    - default: {{ .Values.storageClass.block }}
+      description: StorageClass for Block
+      name: STG_CLASS_BLOCK
+      type: string
+    - default: {{ .Values.storageClass.file }}
+      description: StorageClass for Files
+      name: STG_CLASS_FILE
+      type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: watsonx-ai
+    {{ else }}
+    - default: cpd-enterprise
+    {{ end }}
+      description: "Entitlement, choose between: cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data, watsonx-gov-model-management, watsonx-gov-risk-compliance"
+      name: ENTITLEMENT
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["cpd-enterprise", "cpd-standard", "watsonx-ai", "watsonx-data", "watsonx-gov-model-management", "watsonx-gov-risk-compliance"]
+      {{ end }}
+    - default: "false"
+      description: Set [true] to enable ibm-scheduler
+      name: SCHEDULER
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }}
+    - name: ACCEPT_LICENCE
+      description: 'Please Accept LICENCE (set [true])'
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
+    - default: "true"
+      description: 'Set [false] for non-prod environment'
+      name: PRODUCTION
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
+    - name: APPLY_MACHINECONFIG
+      description: Apply KubeletConfig for cloud-pak-for-data (PidsLimit)
+      type: string
+      default: "true"
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
+    - name: DB2_LIMITED_PRIV
+      description: Run DB2 pod in Limited Privilege mode
+      type: string
+      default: "false"
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }}
+    - name: CASE_FROM_OCI
+      description: Set [true] to download CASE as OCI, [false] to get CASE from Github.
+      type: string
+      {{ if .Values.proxy.enabled }}default: "false"{{ else }}default: "true"{{ end }}
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }}
+    - default: "cp.icr.io/cpopen"
+      description: only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages 
+      name: OCI_LOCATION
+      type: "string"
+    - default: "false"
+      description: (for watsonx.ai) Set [true] to preform the installation without GPU.
+      name: NO_GPU
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }} 
+    - default: "{{ .Release.Name }}-install-option"
+      description: configMap which contains cloud pak install-options
+      name: CP-INSTALL-OPTIONS
+      type: string
+  tasks:
+  - name: kubelet-pod-pids-limit
+    retries: 10
+    params:
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_CMD
+        value: |-
+          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+            apply-pid-limit
+          else
+            echo "No MachineConfig Found"
+          fi
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+      - input: $(params.APPLY_MACHINECONFIG)
+        operator: in
+        values:
+        - "true"
+        - "yes"
+  - name: kubelet-db2-limited-priv
+    retries: 10
+    params:
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_CMD
+        value: |-
+          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+            apply-db2-kubelet --self_managed=true
+          else
+            echo "No MachineConfig Found ..."
+            platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
+
+            case $platformSpec in 
+              IBMCloud)
+                echo "\nIBMCloud ROKS detected"
+                apply-db2-kubelet --openshift_type=roks
+
+                echo "* [Applying kubelet config without reboot]"
+                echo "* Fetching cp4d-kubelet.conf"
+                oc extract cm/cp4d-kubelet-conf -n kube-system --to=/tmp
+
+                echo "* Deploying new kebelet"
+                for n in `oc get node -o name`; do 
+                  oc adm copy-to-node --copy=/tmp/cp4d-kubelet.conf=/etc/kubernetes/kubelet.conf $n
+                done
+
+                echo "* Restarting kubelet"
+                oc adm restart-kubelet nodes --all --directive=RemoveKubeletKubeconfig
+              ;;
+              *)
+                echo "Can't detect CloudProvider. Don't know how to apply configuration"
+              ;;
+            esac
+          fi
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+      - input: $(params.DB2_LIMITED_PRIV)
+        operator: in
+        values:
+        - "true"
+        - "yes"
+  - name: update-pull-secret
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        {{ if not .Values.airgap.enabled }}
+        add-icr-cred-to-global-pull-secret \
+        --entitled_registry_key=$(params.IBM_ENTITLEMENT_KEY)
+        {{ else }}
+        mkdir -p pull-secret && \
+        oc extract secret/pull-secret -n openshift-config --to=pull-secret && \
+        mkdir -p private-registry && \
+        oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to=private-registry && \
+        jq -s '.[0] * .[1]' pull-secret/.dockerconfigjson private-registry/.dockerconfigjson > .dockerconfigjson && \
+        oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson
+        {{ end }}
+
+        if [[ $(oc get mcp -o name | wc -l) -eq 0 ]]; then
+          platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
+          echo
+          echo "non-MCP cluster detected, activating workaround"
+          case $platformSpec in 
+            KubeVirt )
+              echo "KubeVirt detected, activating workaround"
+              echo
+              dockerconfigfile=/var/lib/kubelet/config.json
+            ;;
+            IBMCloud )
+              echo "ROKS detected, activating workaround"
+              echo
+              dockerconfigfile=/.docker/config.json
+            ;;
+          esac
+            oc debug $(oc get node -o name | head -n1) -- chroot /host cat $dockerconfigfile > /tmp/config.json
+
+            {{ if not .Values.airgap.enabled }}
+            cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
+            {{ else }}
+            oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to=/tmp
+            jq -s '.[0] * .[1]' /tmp/config.json /tmp/.dockerconfigjson > /tmp/config.json.new
+            {{ end }}
+
+            sleep 1
+            for n in `oc get node -o name`; do 
+              oc adm copy-to-node --copy=/tmp/config.json.new=$dockerconfigfile $n
+            done
+        fi
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: apply-cluster-components
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        apply-cluster-components \
+        --release=$(params.VERSION) \
+        --license_acceptance=$(params.ACCEPT_LICENCE) \
+        --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
+        --case_download=true \
+        --from_oci=$(params.CASE_FROM_OCI) \
+        --oci_location=$(params.OCI_LOCATION)
+    runAfter:
+    - update-pull-secret
+    - kubelet-pod-pids-limit
+    - kubelet-db2-limited-priv
+    taskRef:
+      kind: Task
+      name: olm-utils
+    timeout: 1h0m0s
+  - name: apply-scheduler
+    params:
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_CMD
+        value: |-
+          apply-scheduler \
+          --release=$(params.VERSION) \
+          --license_acceptance=$(params.ACCEPT_LICENCE) \
+          --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
+          --case_download=true \
+          --from_oci=$(params.CASE_FROM_OCI) \
+          --oci_location=$(params.OCI_LOCATION)
+    runAfter:
+    - apply-cluster-components
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(params.SCHEDULER)
+      operator: in
+      values:
+      - "true"
+      - "yes"
+  - name: authorize-inst-topology
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        authorize-instance-topology \
+        --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+    runAfter:
+    - apply-scheduler
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: setup-instance
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        setup-instance \
+        --release=$(params.VERSION) \
+        --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --license_acceptance=$(params.ACCEPT_LICENCE) \
+        --block_storage_class=$(params.STG_CLASS_BLOCK) \
+        --case_download=true \
+        --run_storage_tests=true \
+        --from_oci=$(params.CASE_FROM_OCI) \
+        --oci_location=$(params.OCI_LOCATION)
+    runAfter:
+    - authorize-inst-topology
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: set-db2-limited-privs
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        oc apply -f - <<EOF
+        apiVersion: v1
+        data:
+          DB2U_RUN_WITH_LIMITED_PRIVS: "true"
+        kind: ConfigMap
+        metadata:
+          name: db2u-product-cm
+          namespace: $(params.PROJECT_CPD_INST_OPERATORS)
+        EOF
+    runAfter:
+    - setup-instance
+    - setup-inst-topology
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+      - input: $(params.DB2_LIMITED_PRIV)
+        operator: in
+        values:
+        - "true"
+        - "yes"
+  - name: component-apply-olm
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
+
+        apply-olm \
+        --release=$(params.VERSION) \
+        --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+        --components=$COMPONENTS \
+        --case_download=true \
+        --from_oci=$(params.CASE_FROM_OCI) \
+        --oci_location=$(params.OCI_LOCATION)
+    runAfter:
+    - set-db2-limited-privs
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: get-license
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        get-license \
+        --release=$(params.VERSION) \
+        --license-type=EE
+    runAfter:
+    - apply-entitlement
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: components-apply-cr
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
+
+        apply-cr \
+        --release=$(params.VERSION) \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --components=$COMPONENTS \
+        --block_storage_class=$(params.STG_CLASS_BLOCK) \
+        --file_storage_class=$(params.STG_CLASS_FILE) \
+        --license_acceptance=$(params.ACCEPT_LICENCE) \
+        --param-file=/tmp/install-options/install-options.yml
+    runAfter:
+    - component-apply-olm
+    taskRef:
+      kind: Task
+      name: olm-utils
+    timeout: 4h0m0s
+  - name: no-gpu-patch
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |+
+        TIME=90
+        while ! oc get -n $(params.PROJECT_CPD_INST_OPERANDS) watsonxai/watsonxai-cr > /dev/null 2>&1; do
+          [ $TIME -eq 0 ] && exit 2
+          echo "Wait from watsonxai-cr to be created. ($TIME)"
+          sleep 60
+          TIME=$((TIME - 1))
+        done
+
+        echo
+        echo "Patch watsonxai-cr to disable tunning-studio (bamdev)"
+        oc patch watsonxai watsonxai-cr \
+        --namespace=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --type='json' \
+        -p='[{"op": "add", "path": "/spec/tuning_disabled", "value": true}]'
+
+        echo
+        echo "restart watsonx-ai operator"
+        sleep 2
+        oc delete pod -n $(params.PROJECT_CPD_INST_OPERATORS) -l app.kubernetes.io/name=ibm-cpd-watsonx-ai-operator --ignore-not-found
+
+    runAfter:
+    - component-apply-olm
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(params.NO_GPU)
+      operator: in
+      values:
+      - "true"
+      - "yes"
+  - name: apply-entitlement
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        apply-entitlement \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --entitlement=$(params.ENTITLEMENT) --production=$(params.PRODUCTION) --apply_branding=true
+    runAfter:
+    - no-gpu-patch
+    - components-apply-cr
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: instance-details
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        get-cpd-instance-details \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --get_admin_initial_credentials=true
+    runAfter:
+    - apply-entitlement
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: get-cr-status
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        get-cr-status \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    runAfter:
+    - apply-entitlement
+    taskRef:
+      kind: Task
+      name: olm-utils
+{{- end -}}
