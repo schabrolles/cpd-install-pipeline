@@ -168,7 +168,7 @@ spec:
           value: $(params.CP-INSTALL-OPTIONS)
         - name: OLM_CMD
           value: |-
-            setup-instance-topology \
+            setup-instance \
             --release=$(params.VERSION) \
             --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
             --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \

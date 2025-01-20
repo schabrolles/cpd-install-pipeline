@@ -69,6 +69,10 @@ spec:
       description: StorageClass for Files
       name: STG_CLASS_FILE
       type: string
+    - name: STORAGE_TESTS
+      description: "run test performance validation against Provided StorageClass"
+      type: string
+      default: "false"
     {{ if eq .Values.default_cpd_install "watsonx" }}
     - default: watsonx-ai
     {{ else }}
@@ -339,7 +343,7 @@ spec:
         --license_acceptance=$(params.ACCEPT_LICENCE) \
         --block_storage_class=$(params.STG_CLASS_BLOCK) \
         --case_download=true \
-        --run_storage_tests=true \
+        --run_storage_tests=$(params.STORAGE_TESTS) \
         --from_oci=$(params.CASE_FROM_OCI) \
         --oci_location=$(params.OCI_LOCATION)
     runAfter:
@@ -366,7 +370,6 @@ spec:
         EOF
     runAfter:
     - setup-instance
-    - setup-inst-topology
     taskRef:
       kind: Task
       name: olm-utils
