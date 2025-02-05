@@ -39,8 +39,11 @@ spec:
       OCP_TOKEN=$(oc whoami -t)
       login-to-ocp --token=${OCP_TOKEN} --server=https://kubernetes.default.svc.cluster.local
 
-      [ -d /opt/ansible/.airgap/secrets ] && cp ./private-registry.json /opt/ansible/.airgap/secrets/config.json
-
+      {{ if .Values.airgap.enabled }}
+      mkdir -p /opt/ansible/.airgap/secrets
+      cp ./private-registry.json /opt/ansible/.airgap/secrets/config.json
+      {{ end }}
+      
       $(params.OLM_CMD)
     volumeMounts:
       - name: "install-options"
