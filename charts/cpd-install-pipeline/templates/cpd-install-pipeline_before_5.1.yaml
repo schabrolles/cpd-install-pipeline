@@ -11,7 +11,7 @@ metadata:
 spec:
   params:
     {{ if .Values.airgap.enabled }}
-    - default: private-registry
+    - default: {{ .Values.airgap.private_registry_secret }}
       description: registry-secret containing your private registry credential  
       name: PRIVATE_REGISTRY_SECRET
       type: string
@@ -224,9 +224,9 @@ spec:
         {{ else }}
         mkdir -p pull-secret && \
         oc extract secret/pull-secret -n openshift-config --to=pull-secret && \
-        mkdir -p private-registry && \
-        oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to=private-registry && \
-        jq -s '.[0] * .[1]' pull-secret/.dockerconfigjson private-registry/.dockerconfigjson > .dockerconfigjson && \
+        mkdir -p {{ .Values.airgap.private_registry_secret }} && \
+        oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to={{ .Values.airgap.private_registry_secret }} && \
+        jq -s '.[0] * .[1]' pull-secret/.dockerconfigjson {{ .Values.airgap.private_registry_secret }}/.dockerconfigjson > .dockerconfigjson && \
         oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson
         {{ end }}
 

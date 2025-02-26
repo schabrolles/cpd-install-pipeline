@@ -11,7 +11,7 @@ metadata:
 spec:
   params:
     {{ if .Values.airgap.enabled }}
-    - default: private-registry
+    - default: {{ .Values.airgap.private_registry_secret }}
       description: registry-secret containing your private registry credential  
       name: PRIVATE_REGISTRY_SECRET
       type: string

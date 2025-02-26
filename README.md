@@ -19,7 +19,7 @@ Install automatically IBM Cloudpak for Data using Tekton Pipeline
 - **Starting Pipeline**
    - GUI based: [Using openshift pipeline graphical interface](#2--Starting-pipeline-with-GUI)
    - cli based: [applying pipelineRun yaml file](2bis--Starting-pipeline-from-cli-(by-applying-YAML))
- 
+
 ## Installation
 The easiest way to install the pipeline is to add this helm registry to your openshift cluster.  
 **You must have acces to internet for this.**  

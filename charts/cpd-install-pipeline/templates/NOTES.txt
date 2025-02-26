@@ -3,7 +3,7 @@
 -------------------------------------
 /!\ YOU MUST CREATE YOUR PRIVATE REGISTRY SECRET /!\
 ```
-oc create secret docker-registry -n {{ .Release.Namespace }} private-registry --docker-username <USERNAME> --docker-password <PASSWORD> --docker-server <REGISTRY-HOSTNAME:PORT>
+oc create secret docker-registry -n {{ .Release.Namespace }} {{ .Values.airgap.private_registry_secret }} --docker-username <USERNAME> --docker-password <PASSWORD> --docker-server <REGISTRY-HOSTNAME:PORT>
 ```
 {{ end }}
 
@@ -52,7 +52,7 @@ spec:
     value: >>> PUT YOUR IBM ICR KEY HERE <<<
   {{ else -}}
   - name: PRIVATE_REGISTRY_SECRET
-    value: private-registry
+    value: {{ .Values.airgap.private_registry_secret }}
   {{ end -}}
   - name: STG_CLASS_BLOCK
     value: {{ .Values.storageClass.block }}

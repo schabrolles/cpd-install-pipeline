@@ -16,7 +16,7 @@ spec:
     name: CP-INSTALL-OPTIONS
     type: string
     default: {{ .Release.Name }}-install-option
-  - default: private-registry
+  - default: {{ .Values.airgap.private_registry_secret }}
     description: secret which contains credential for private registry
     name: AIRGAP-SECRET
     type: string
@@ -41,7 +41,7 @@ spec:
 
       {{ if .Values.airgap.enabled }}
       mkdir -p /opt/ansible/.airgap/secrets
-      cp ./private-registry.json /opt/ansible/.airgap/secrets/config.json
+      cp ./{{ .Values.airgap.private_registry_secret }}.json /opt/ansible/.airgap/secrets/config.json
       {{ end }}
       
       $(params.OLM_CMD)
@@ -51,7 +51,7 @@ spec:
         subPath: install-options.yml
       {{ if .Values.airgap.enabled }}
       - name: "airgap-secret"
-        mountPath: /opt/ansible/private-registry.json
+        mountPath: /opt/ansible/{{ .Values.airgap.private_registry_secret }}.json
         subPath: .dockerconfigjson
       {{ end }}
   volumes:
