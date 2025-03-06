@@ -36,7 +36,7 @@ spec:
       description: cloud-pak ibm-licensing namespace
       name: CONTROL_PROJECT_LICENSE_SERVICE
       type: string
-    - default: ibm-scheduler
+    - default: ibm-cpd-scheduler
       description: cloud-pak scheduler namespace
       name: CONTROL_PROJECT_SCHEDULING_SERVICE
       type: string
@@ -81,13 +81,6 @@ spec:
       description: only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages 
       name: OCI_LOCATION
       type: "string"
-    - default: "false"
-      description: (for watsonx.ai) Set [true] to preform the installation without GPU.
-      name: NO_GPU
-      type: string
-      {{ if .Values.tektonPatch.activateEnum }}
-      enum: ["true", "false"]
-      {{ end }} 
     - default: "{{ .Release.Name }}-install-option"
       description: configMap which contains cloud pak install-options
       name: CP-INSTALL-OPTIONS
