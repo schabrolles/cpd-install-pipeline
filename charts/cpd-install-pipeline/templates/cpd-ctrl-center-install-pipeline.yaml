@@ -207,7 +207,7 @@ spec:
         setup-control-center \
         --release=$(params.VERSION) \
         --operator_ns=$(params.CONTROL_PROJECT_OPERATORS) \
-        --instance_ns=$(params.CONTROL_PROJECT_OPERANDS) \
+        --operand_ns=$(params.CONTROL_PROJECT_OPERANDS) \
         --license_acceptance=$(params.ACCEPT_LICENCE) \
         --block_storage_class=$(params.STG_CLASS_BLOCK) \
         --case_download=true \
