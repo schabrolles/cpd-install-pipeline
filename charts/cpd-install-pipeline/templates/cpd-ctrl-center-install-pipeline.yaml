@@ -61,41 +61,9 @@ spec:
       description: StorageClass for Files
       name: STG_CLASS_FILE
       type: string
-    - name: STORAGE_TESTS
-      description: "run test performance validation against Provided StorageClass"
-      type: string
-      default: "false"
-    - default: cpd-enterprise
-      description: "Entitlement, choose between: cpd-enterprise, cpd-standard, watsonx-ai, watsonx-data, watsonx-gov-model-management, watsonx-gov-risk-compliance"
-      name: ENTITLEMENT
-      type: string
-      {{ if .Values.tektonPatch.activateEnum }}
-      enum: ["cpd-enterprise", "cpd-standard", "watsonx-ai", "watsonx-data", "watsonx-gov-model-management", "watsonx-gov-risk-compliance"]
-      {{ end }}
-    - default: "false"
-      description: Set [true] to enable ibm-scheduler
-      name: SCHEDULER
-      type: string
-      {{ if .Values.tektonPatch.activateEnum }}
-      enum: ["true", "false"]
-      {{ end }}
     - name: ACCEPT_LICENCE
       description: 'Please Accept LICENCE (set [true])'
       type: string
-      {{ if .Values.tektonPatch.activateEnum }}
-      enum: ["true", "false"]
-      {{ end }} 
-    - default: "true"
-      description: 'Set [false] for non-prod environment'
-      name: PRODUCTION
-      type: string
-      {{ if .Values.tektonPatch.activateEnum }}
-      enum: ["true", "false"]
-      {{ end }} 
-    - name: APPLY_MACHINECONFIG
-      description: Apply KubeletConfig for cloud-pak-for-data (PidsLimit)
-      type: string
-      default: "true"
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{ end }} 
