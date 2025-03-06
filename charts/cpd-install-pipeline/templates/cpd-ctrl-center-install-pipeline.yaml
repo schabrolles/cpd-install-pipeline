@@ -12,7 +12,7 @@ spec:
   params:
     {{ if .Values.airgap.enabled }}
     - default: {{ .Values.airgap.private_registry_secret }}
-      description: registry-secret containing your private registry credential  
+      description: registry-secret containing your private registry credential
       name: PRIVATE_REGISTRY_SECRET
       type: string
     {{ end }}
@@ -244,7 +244,7 @@ spec:
           namespace: $(params.CONTROL_PROJECT_OPERATORS)
         EOF
     runAfter:
-    - setup-instance
+    - setup-control-center
     taskRef:
       kind: Task
       name: olm-utils
