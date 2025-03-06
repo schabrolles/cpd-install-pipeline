@@ -303,7 +303,7 @@ spec:
     - name: OLM_CMD
       value: |-
         get-cpd-instance-details \
-        --cpd_instance_ns=$(params.CONTROL_PROJECT_OPERAND) \
+        --cpd_instance_ns=$(params.CONTROL_PROJECT_OPERANDS) \
         --get_admin_initial_credentials=true
     runAfter:
     - oauth-setup
@@ -317,7 +317,7 @@ spec:
     - name: OLM_CMD
       value: |-
         get-cr-status \
-        --cpd_instance_ns=$(params.CONTROL_PROJECT_OPERAND)
+        --cpd_instance_ns=$(params.CONTROL_PROJECT_OPERANDS)
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     runAfter:
