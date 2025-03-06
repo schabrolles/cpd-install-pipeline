@@ -61,6 +61,10 @@ spec:
       description: StorageClass for Files
       name: STG_CLASS_FILE
       type: string
+    - name: STORAGE_TESTS
+      description: "run test performance validation against Provided StorageClass"
+      type: string
+      default: "false"
     - name: ACCEPT_LICENCE
       description: 'Please Accept LICENCE (set [true])'
       type: string
