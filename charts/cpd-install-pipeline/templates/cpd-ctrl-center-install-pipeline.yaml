@@ -245,7 +245,7 @@ spec:
         kind: ConfigMap
         metadata:
           name: db2u-product-cm
-          namespace: $(params.PROJECT_CPD_INST_OPERATORS)
+          namespace: $(params.CONTROL_PROJECT_OPERATORS)
         EOF
     runAfter:
     - setup-instance
