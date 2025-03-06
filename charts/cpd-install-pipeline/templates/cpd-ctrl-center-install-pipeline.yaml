@@ -24,14 +24,6 @@ spec:
       description: cloud-pak for data version
       name: VERSION
       type: string
-    {{ if eq .Values.default_cpd_install "watsonx" }}
-    - default: watsonx_ai,watsonx_governance,watsonx_data
-    {{ else }}
-    - default: wml,ws
-    {{ end }}
-      description: "cloud-pak components to install (wml,watsonx_ai,watsonx_governance,watsonx_data,wca_ansible ...)"
-      name: COMPONENTS
-      type: string
     - default: ibm-cc
       description: IBM Software Hub Control Center operand namspace
       name: CONTROL_PROJECT_OPERANDS
@@ -211,7 +203,7 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
-  - name: setup-instance
+  - name: setup-control-center
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
@@ -221,8 +213,8 @@ spec:
       value: |-
         setup-control-center \
         --release=$(params.VERSION) \
-        --cpd_operator_ns=$(params.CONTROL_PROJECT_OPERATORS) \
-        --cpd_instance_ns=$(params.CONTROL_PROJECT_OPERANDS) \
+        --operator_ns=$(params.CONTROL_PROJECT_OPERATORS) \
+        --instance_ns=$(params.CONTROL_PROJECT_OPERANDS) \
         --license_acceptance=$(params.ACCEPT_LICENCE) \
         --block_storage_class=$(params.STG_CLASS_BLOCK) \
         --case_download=true \
