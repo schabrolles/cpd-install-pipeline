@@ -1,0 +1,47 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: cpd-inject-custom-certs
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+  - default: {{ .Values.default_olm_utils_image }}
+    description: olm-utils images
+    name: OLM_UTILS_IMAGE
+    type: string
+  - default: {{ .Values.cpd_version }}
+    description: cloud-pak for data version
+    name: VERSION
+    type: string
+  - description: cloud-pak operand namspace
+    name: PROJECT_CPD_INST_OPERANDS
+    type: string
+  - default: "true"
+    description: Inject the secret into IBM Software Hub pods
+    name: INJECT_TO_PODS
+    type: string
+  tasks:
+  - name: install-cpd-config-ac
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION)
+    - name: OLM_CMD
+      value: install-cpd-config-ac --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+    taskRef:
+      kind: Task
+      name: olm-utils
+    timeout: 3h0m0s
+  - name: gen-platform-ca-certs
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION)
+    - name: OLM_CMD
+      value: |-
+        gen-platform-ca-certs \
+        --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+        --apply=$(params.INJECT_TO_PODS)
+    runAfter:
+    - install-cpd-config-ac
+    taskRef:
+      kind: Task
+      name: olm-utils
