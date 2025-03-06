@@ -3,9 +3,9 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   {{ if .Values.airgap.enabled }}
-  name: cpd-ctrl-center-install-pipeline
+  name: cpd-ctrl-center-install-pipeline-airgap
   {{ else }}
-  name: cpd-install
+  name: cpd-ctrl-center-install-pipeline
   {{ end }}
   namespace: {{ .Release.Namespace }}
 spec:
