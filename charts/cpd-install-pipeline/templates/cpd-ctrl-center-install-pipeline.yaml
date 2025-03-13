@@ -255,9 +255,9 @@ spec:
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
-        export CONTROL_CENTER_ROUTE=$(oc get route cpd -n ${CONTROL_PROJECT_OPERANDS} -ojsonpath={.spec.host}"{'\n'}")
+        export CONTROL_CENTER_ROUTE=$(oc get route cpd -n ${params.CONTROL_PROJECT_OPERANDS} -ojsonpath={.spec.host}"{'\n'}")
         export OAUTH_CLIENT_ID=ibm-software-hub-cc
-        export OAUTH_SECRET=ibm-cc-passwd
+        export OAUTH_SECRET=$(tr -dc 'A-Za-z0-9!@#$%^&*()_' < /dev/urandom | fold -w 32 | head -1)
 
         cat <<EOF |oc apply -f -
         kind: OAuthClient
