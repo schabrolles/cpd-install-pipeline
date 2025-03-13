@@ -24,12 +24,8 @@ spec:
       description: cloud-pak for data version
       name: VERSION
       type: string
-    {{ if eq .Values.default_cpd_install "watsonx" }}
-    - default: watsonx_ai,watsonx_governance,watsonx_data
-    {{ else }}
-    - default: wml,ws
-    {{ end }}
-      description: "cloud-pak components to install (wml,watsonx_ai,watsonx_governance,watsonx_data,wca_ansible ...)"
+    - default: all
+      description: "cloud-pak components to upgrade (all or wml,watsonx_ai,watsonx_governance,watsonx_data,wca_ansible ...)"
       name: COMPONENTS
       type: string
     {{ if eq .Values.default_cpd_install "watsonx" }}
@@ -183,7 +179,6 @@ spec:
       taskRef:
         kind: Task
         name: olm-utils
-  
     - name: component-apply-olm
       params:
         - name: OLM_UTILS_IMAGE
@@ -193,6 +188,13 @@ spec:
         - name: OLM_CMD
           value: |-
             COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
+
+            if [ "$COMPONENTS" == "all" ] ; then
+              COMPONENTS=$(list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) | grep -A1 "components list is:" | tail -n1 | tr -d '[:space:]')
+            fi
+
+            echo COMPONENTS=$COMPONENTS
+            echo
 
             apply-olm \
             --release=$(params.VERSION) \
@@ -216,6 +218,13 @@ spec:
         - name: OLM_CMD
           value: |-
             COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
+
+            if [ "$COMPONENTS" == "all" ] ; then
+              COMPONENTS=$(list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) | grep -A1 "components list is:" | tail -n1 | tr -d '[:space:]')
+            fi
+
+            echo COMPONENTS=$COMPONENTS
+            echo
 
             apply-cr \
             --release=$(params.VERSION) \
