@@ -431,7 +431,8 @@ spec:
         --release=$(params.VERSION) \
         --license-type=EE
     runAfter:
-    - component-apply-olm
+    - no-gpu-patch
+    - components-apply-cr
     taskRef:
       kind: Task
       name: olm-utils
