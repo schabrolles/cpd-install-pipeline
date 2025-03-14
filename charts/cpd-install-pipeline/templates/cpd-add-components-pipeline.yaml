@@ -275,7 +275,6 @@ spec:
             --param-file=/tmp/install-options/install-options.yml
       runAfter:
         - no-gpu-patch
-        - set-db2-limited-privs
         - component-apply-olm
       taskRef:
         kind: Task
