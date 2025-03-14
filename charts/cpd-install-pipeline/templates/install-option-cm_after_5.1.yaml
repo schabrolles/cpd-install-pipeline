@@ -242,4 +242,4 @@ data:
     #    enableMrcp: false
     #    unimrcpConfigSecretName: unimrcp-config-secret
     #    mrcpv2SipPort: 5555
-{{-end -}}
+{{- end -}}
