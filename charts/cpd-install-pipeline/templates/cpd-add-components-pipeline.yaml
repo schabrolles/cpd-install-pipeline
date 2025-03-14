@@ -56,6 +56,17 @@ spec:
       description: StorageClass for Files
       name: STG_CLASS_FILE
       type: string
+    {{ if eq .Values.default_cpd_install "watsonx" }}
+    - default: "watsonx-ai,watsonx-data,watsonx-gov-model-management,watsonx-gov-risk-compliance"
+    {{ else }}
+    - default: cpd-enterprise
+    {{ end }}
+      description: "Entitlement: cpd-enterprise,cpd-standard,watsonx-ai,watsonx-data,watsonx-gov-model-management, watsonx-gov-risk-compliance...https://www.ibm.com/docs/en/software-hub/5.1.x?topic=entitlements-applying-your-without-node-pinning"
+      name: ENTITLEMENT
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["cpd-enterprise", "cpd-standard", "watsonx-ai", "watsonx-data", "watsonx-gov-model-management", "watsonx-gov-risk-compliance"]
+      {{ end }}
     - default: 'false'
       description: 'Set [true] to enable ibm-scheduler'
       name: SCHEDULER
@@ -184,6 +195,24 @@ spec:
           values:
             - 'true'
             - 'yes'
+    - name: apply-entitlement
+      params:
+      - name: OLM_UTILS_IMAGE
+        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}
+      - name: CP-INSTALL-OPTIONS
+        value: $(params.CP-INSTALL-OPTIONS)
+      - name: OLM_CMD
+        value: |-
+          for cmp in $(echo $(params.ENTITLEMENT) | tr , " "); do
+            apply-entitlement \
+            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --entitlement=$cmp --production=$(params.PRODUCTION) --apply_branding=true
+          done
+      runAfter:
+      - apply-scheduler
+      taskRef:
+        kind: Task
+        name: olm-utils
     - name: component-apply-olm
       params:
         - name: OLM_UTILS_IMAGE
@@ -200,7 +229,7 @@ spec:
             --from_oci=$(params.CASE_FROM_OCI) \
             --oci_location=$(params.OCI_LOCATION)
       runAfter:
-        - apply-scheduler
+        - apply-entitlement
       taskRef:
         kind: Task
         name: olm-utils
