@@ -1,3 +1,4 @@
+{{- if semverCompare ">=5.1.0" .Values.cpd_version -}}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -7,7 +8,7 @@ data:
   install-options.yml: |
     ###################################################################################
     # Parameters description:
-    # https://www.ibm.com/docs/en/cloud-paks/cp-data/5.0.x?topic=services-specifying-installation-options#install-platform-param-file__watsonxai-parms
+    # https://www.ibm.com/docs/fr/software-hub/5.1.x?topic=services-specifying-installation-options
     ###################################################################################
     custom_spec:
       cpd_platform:
@@ -23,11 +24,19 @@ data:
     #   openpagesInstanceCR: "op-wxgov-instance"
     #   openPages:
     #     databaseType: internal
+    #     database: Db2
     #     dbSecretName: <secret-name>
+    #     enableGlobalSearch: false
     #  wkc:
-    #    enableKnowledgeGraph: False
     #    enableDataQuality: False
-    
+    #    enableSemanticAutomation: False
+    #    enableSemanticEmbedding: False
+    #    enableKnowledgeGraph: False
+    #    useFDB: False
+    #  ws_pipelines:
+    #    rbsimage: rbs-ext
+    #    pythonImage: wsp-ts
+
     ################################################################################
     # WKC / Meta
     ################################################################################
@@ -41,6 +50,12 @@ data:
     #watson_assistant_size: Production
     #watson_assistant_bigpv: false
     #watson_assistant_analytics_enabled: true
+    #watson_assistant_watsonx_ai_type: embedded
+
+    ################################################################################
+    # watsonx Orchestrate parameters
+    ################################################################################
+    #watson_orchestrate_watsonx_ai_type: false
 
     ################################################################################
     # Data Replication parameters
@@ -227,4 +242,4 @@ data:
     #    enableMrcp: false
     #    unimrcpConfigSecretName: unimrcp-config-secret
     #    mrcpv2SipPort: 5555
-
+{{-end -}}
