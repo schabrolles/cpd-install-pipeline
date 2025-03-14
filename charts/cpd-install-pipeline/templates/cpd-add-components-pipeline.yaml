@@ -74,6 +74,13 @@ spec:
     - description: 'Please Accept LICENCE (set [true])'
       name: ACCEPT_LICENCE
       type: string
+    - default: "true"
+      description: 'Set [false] for non-prod environment'
+      name: PRODUCTION
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }}
     - default: 'false'
       description: Run DB2 pod in Limited Privilege mode
       name: DB2_LIMITED_PRIV
