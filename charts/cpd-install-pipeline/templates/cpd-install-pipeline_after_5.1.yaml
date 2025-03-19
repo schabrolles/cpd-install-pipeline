@@ -80,7 +80,7 @@ spec:
     - default: cpd-enterprise
       description: "Entitlement: cpd-enterprise,cpd-standard...https://www.ibm.com/docs/en/software-hub/5.1.x?topic=entitlements-applying-your-without-node-pinning"
     {{ end }}
-      name: ENTITLEMENT (remove/add what you need)
+      name: ENTITLEMENT
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["cpd-enterprise", "cpd-standard", "watsonx-ai", "watsonx-data", "watsonx-gov-model-management", "watsonx-gov-risk-compliance"]
