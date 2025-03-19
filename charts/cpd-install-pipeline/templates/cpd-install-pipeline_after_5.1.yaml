@@ -74,11 +74,12 @@ spec:
       type: string
       default: "false"
     {{ if eq .Values.default_cpd_install "watsonx" }}
-    - default: "watsonx-ai,watsonx-data,watsonx-gov-model-management,watsonx-gov-risk-compliance"
+    - default: "watsonx-ai"
+      description: "Entitlement: watsonx-ai,watsonx-data,watsonx-data,watsonx-gov-mm,watsonx-gov-rc,watsonx-orchestrate...https://www.ibm.com/docs/en/software-hub/5.1.x?topic=entitlements-applying-your-without-node-pinning"
     {{ else }}
     - default: cpd-enterprise
+      description: "Entitlement: cpd-enterprise,cpd-standard...https://www.ibm.com/docs/en/software-hub/5.1.x?topic=entitlements-applying-your-without-node-pinning"
     {{ end }}
-      description: "Entitlement: cpd-enterprise,cpd-standard,watsonx-ai,watsonx-data,watsonx-gov-mm,watsonx-gov-rc,watsonx-orchestrate...https://www.ibm.com/docs/en/software-hub/5.1.x?topic=entitlements-applying-your-without-node-pinning"
       name: ENTITLEMENT
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
