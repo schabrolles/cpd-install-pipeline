@@ -9,7 +9,7 @@ arch: "x86"
 default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v3"
 
 # Cloudpak for Data / OLM version to set as default in pipelines
-cpd_version: "5.1.3
+cpd_version: "5.1.3"
 
 # Cloud pak for Data mode to set as default in pipelines: cpd-enterprise, watsonx
 default_cpd_install: "cpd"
