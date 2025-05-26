@@ -6,13 +6,13 @@
 arch: "x86"
 
 # default olm utils image to use
-default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v3"
+default_olm_utils_image: "artifactory.stetwca.mop.ibm/icr.io/cpopen/cpd/olm-utils-v3"
 
 # Cloudpak for Data / OLM version to set as default in pipelines
-cpd_version: "5.1.3
+cpd_version: "5.1.2"
 
 # Cloud pak for Data mode to set as default in pipelines: cpd-enterprise, watsonx
-default_cpd_install: "cpd"
+default_cpd_install: "watsonx"
 
 storageClass:
   block: ocs-storagecluster-ceph-rbd
@@ -27,8 +27,8 @@ proxy:
 
 # Private registry docker secret for disconnected (airgap) installation
 airgap:
-  enabled: false
-  private_registry_secret: "private_registry_secret"
+  enabled: true
+  private_registry_secret: "private-registry-secret"
 
 tektonPatch:
   enabled: true
