@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: cpd-cli-manage
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+    - default: {{ .Values.default_olm_utils_image }}
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: {{ .Values.cpd_version }}
+      description: cloud-pak for data version
+      name: VERSION
+      type: string
+    - description: cpd-cli manage command (whitout 'cpd-cli manage')
+      name: OLM_CMD
+      type: string
+  tasks:
+    - name: cpd-cli-manage
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION)'
+        - name: OLM_CMD
+          value: |-
+            $(params.OLM_CMD)
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 3h0m0s
