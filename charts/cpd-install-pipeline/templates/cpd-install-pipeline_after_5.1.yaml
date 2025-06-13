@@ -246,6 +246,11 @@ spec:
               echo
               dockerconfigfile=/.docker/config.json
             ;;
+            *)
+              echo "Unknown platform detected, activating workaround, † cross your fingers †"
+              echo
+              dockerconfigfile=/var/lib/kubelet/config.json
+            ;;
           esac
             oc debug $(oc get node -o name | head -n1) -- chroot /host cat $dockerconfigfile > /tmp/config.json
 
