@@ -23,7 +23,7 @@ spec:
       description: cloud-pak for data version
       name: VERSION
       type: string
-    - description: 'cloud-pak components to install (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...)'
+    - description: 'cloud-pak components to install (wml,ws,watsonx_ai,watsonx_governance,watsonx_data ...) https://www.ibm.com/docs/en/software-hub/5.2.x?topic=information-determining-which-components-install'
       name: COMPONENTS
       type: string
     {{ if eq .Values.default_cpd_install "watsonx" }}

@@ -29,7 +29,7 @@ spec:
     {{ else }}
     - default: wml,ws
     {{ end }}
-      description: "cloud-pak components to install (wml,watsonx_ai,watsonx_governance,watsonx_data,wca_ansible ...)"
+      description: "cloud-pak components to install (wml,watsonx_ai,watsonx_governance,watsonx_data,wca_ansible ...)https://www.ibm.com/docs/en/software-hub/5.2.x?topic=information-determining-which-components-install"
       name: COMPONENTS
       type: string
     {{ if eq .Values.default_cpd_install "watsonx" }}
