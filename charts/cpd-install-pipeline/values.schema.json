@@ -70,7 +70,7 @@
         "private_registry_secret": {
           "type": "string",
           "description": "docker secret for the private registry which contain cp.icr.io mirror (when airgap_mode is enabled)",
-          "default": "private_registry_secret"
+          "default": "private-registry-secret"
         }
       }
     },

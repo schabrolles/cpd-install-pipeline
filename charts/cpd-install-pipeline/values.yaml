@@ -28,7 +28,7 @@ proxy:
 # Private registry docker secret for disconnected (airgap) installation
 airgap:
   enabled: false
-  private_registry_secret: "private_registry_secret"
+  private_registry_secret: "private-registry-secret"
 
 tektonPatch:
   enabled: true
