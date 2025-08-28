@@ -190,7 +190,7 @@ spec:
             COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
 
             if [ "$COMPONENTS" == "all" ] ; then
-              {{- if semverCompare "<=5.2.0" .Values.cpd_version }}
+              {{- if semverCompare "<5.2.0" .Values.cpd_version }}
               COMPONENTS=$(list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) | grep -A1 "components list is:" | tail -n1 | tr -d '[:space:]')
               {{- else }}
               COMPONENTS=$(list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) | awk '/- name:/ {COMPONENT=COMPONENT","$3} END{print COMPONENT}' | cut -d, -f2-)
@@ -224,7 +224,11 @@ spec:
             COMPONENTS=$(echo $(params.COMPONENTS) | tr -d '[:space:]')
 
             if [ "$COMPONENTS" == "all" ] ; then
+              {{- if semverCompare "<5.2.0" .Values.cpd_version }}
               COMPONENTS=$(list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) | grep -A1 "components list is:" | tail -n1 | tr -d '[:space:]')
+              {{- else }}
+              COMPONENTS=$(list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) | awk '/- name:/ {COMPONENT=COMPONENT","$3} END{print COMPONENT}' | cut -d, -f2-)
+              {{- end }}
             fi
 
             echo COMPONENTS=$COMPONENTS
