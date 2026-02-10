@@ -1,3 +1,4 @@
+{{- if semverCompare "~5.3.0" .Values.cpd_version }}
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
@@ -34,11 +35,11 @@ spec:
   steps:
   - image: $(params.OLM_UTILS_IMAGE)
     name: olm-run-cmd
-    env:
-    - name: CASE_TOLERATION
-      value: "--skip-verify"
-    - name: CASECTL_RESOLVE_CHARTS
-      value: "false"
+    # env:
+    # - name: CASE_TOLERATION
+    #   value: "--skip-verify"
+    # - name: CASECTL_RESOLVE_CHARTS
+    #   value: "false"
     script: |
       oc whoami --show-server
       OCP_TOKEN=$(oc whoami -t)
@@ -68,3 +69,4 @@ spec:
       secret:
         secretName: $(params.AIRGAP-SECRET)
     {{ end  }}
+{{ end }}

@@ -1,2 +1,21 @@
+# IDE
 .vscode
+.idea/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Bob-Shell
+.bob
+
+# Helm
+*.tgz
+charts/*/charts/
+.helm/
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*~

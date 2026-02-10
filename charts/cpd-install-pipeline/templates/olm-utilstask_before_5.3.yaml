@@ -1,0 +1,72 @@
+{{- if semverCompare "<=5.3.0" .Values.cpd_version -}}
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: olm-utils
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+  - default: {{ .Values.default_olm_utils_image }}
+    description: olm-utils image
+    name: OLM_UTILS_IMAGE
+    type: string
+  - description: olm command to run
+    name: OLM_CMD
+    type: string
+  - description: configMap which contains cloud pak install-options
+    name: CP-INSTALL-OPTIONS
+    type: string
+    default: {{ .Release.Name }}-install-option
+  - default: {{ .Values.airgap.private_registry_secret }}
+    description: secret which contains credential for private registry
+    name: AIRGAP-SECRET
+    type: string
+  {{ if .Values.proxy.enabled }}
+  stepTemplate:
+    computeResources: {}
+    env:
+      - name: HTTP_PROXY
+        value: {{ .Values.proxy.http_proxy }}
+      - name: HTTPS_PROXY
+        value: {{ .Values.proxy.https_proxy }}
+      - name: NO_PROXY
+        value: {{ .Values.proxy.no_proxy }}
+  {{ end }}
+  steps:
+  - image: $(params.OLM_UTILS_IMAGE)
+    name: olm-run-cmd
+    env:
+    - name: CASE_TOLERATION
+      value: "--skip-verify"
+    - name: CASECTL_RESOLVE_CHARTS
+      value: "false"
+    script: |
+      oc whoami --show-server
+      OCP_TOKEN=$(oc whoami -t)
+      login-to-ocp --token=${OCP_TOKEN} --server=https://kubernetes.default.svc.cluster.local
+
+      {{ if .Values.airgap.enabled }}
+      mkdir -p /opt/ansible/.airgap/secrets
+      cp ./{{ .Values.airgap.private_registry_secret }}.json /opt/ansible/.airgap/secrets/config.json
+      {{ end }}
+      
+      $(params.OLM_CMD)
+    volumeMounts:
+      - name: "install-options"
+        mountPath: /tmp/install-options/install-options.yml
+        subPath: install-options.yml
+      {{ if .Values.airgap.enabled }}
+      - name: "airgap-secret"
+        mountPath: /opt/ansible/{{ .Values.airgap.private_registry_secret }}.json
+        subPath: .dockerconfigjson
+      {{ end }}
+  volumes:
+    - name: "install-options"
+      configMap:
+        name: "$(params.CP-INSTALL-OPTIONS)"
+    {{ if .Values.airgap.enabled }}
+    - name: "airgap-secret"
+      secret:
+        secretName: $(params.AIRGAP-SECRET)
+    {{ end  }}
+{{ end }}
