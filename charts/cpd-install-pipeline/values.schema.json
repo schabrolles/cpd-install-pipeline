@@ -18,7 +18,7 @@
     "default_olm_utils_image": {
       "type": "string",
        "description": "(optional) default olm utils image to use (without tag)",
-       "default": "icr.io/cpopen/cpd/olm-utils-v3"
+       "default": "icr.io/cpopen/cpd/olm-utils-v4"
     },
     "storageClass": {
       "description": "Set the default StorageClass to use in the cpd-install pipelines",
