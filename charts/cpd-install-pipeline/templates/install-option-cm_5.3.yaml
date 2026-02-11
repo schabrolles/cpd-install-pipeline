@@ -1,0 +1,52 @@
+{{- if semverCompare "~5.2.0" .Values.cpd_version -}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}-install-option
+  namespace: {{ .Release.Namespace }}
+data:
+  install-options.yml: |
+    non_olm:
+      # ............................................................................
+      # watsonx.ai parameters
+      # ............................................................................
+      watsonxAi:
+        liteInstall: false
+
+      # ............................................................................
+      # watsonx Orchestrate parameters
+      # ............................................................................
+      watsonxOrchestrate:
+        # choose between, agentic, agentic_assistant, agentic_skills_assistant
+        installMode: "agentic"
+        watsonxAI:
+          watsonxaiifm: false
+          syomModels: []
+          ootbModels: []
+
+      # ............................................................................
+      # watsonx.governance parameters
+      # ............................................................................
+      watsonxGovernance:
+        installType: <install-type>
+        enableFactsheet: true
+        enableOpenpages: true
+        enableOpenscale: true
+
+      #   openpagesInstanceCR: "op-wxgov-instance"
+      #   openPages:
+      #     databaseType: internal
+      #     database: Db2
+      #     dbSecretName: <secret-name>
+
+      #override_components_meta:
+      #  watsonx_governance:
+      #    status_max_retries: 240
+
+      # ............................................................................
+      # watsonx.data parameters
+      # ............................................................................
+      watsonxData:
+        enable_lite_milvus: false
+        scaleConfig: small
+{{- end -}}

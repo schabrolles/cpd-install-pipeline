@@ -70,12 +70,18 @@ spec:
     value: 'true'
   - name: DB2_LIMITED_PRIV
     value: 'false'
+{{- if semverCompare "~5.3.0" .Values.cpd_version }}
+  - name: IMAGE_PULL_PREFIX
+    value: "icr.io"
+{{ end -}}
   - name: CASE_FROM_OCI
     value: 'true'
   - name: OCI_LOCATION
     value: "icr.io/cpopen"
+{{- if semverCompare "<5.3.0" .Values.cpd_version }}
   - name: NO_GPU
     value: 'true'
+{{ end -}}
   - name: CP-INSTALL-OPTIONS
     value: {{ .Release.Name }}-install-option
   pipelineRef:
