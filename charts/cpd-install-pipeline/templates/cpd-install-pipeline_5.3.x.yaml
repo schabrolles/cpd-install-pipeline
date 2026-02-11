@@ -443,7 +443,7 @@ spec:
         for cmp in $(echo $(params.ENTITLEMENT) | tr , " "); do
           apply-entitlement \
           --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
-          --entitlement=$cmp --production=$(params.PRODUCTION) --apply_branding=true
+          --entitlement=$cmp --production=$(params.PRODUCTION)
         done
     runAfter:
     - cpd-install
