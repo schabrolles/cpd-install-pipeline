@@ -74,7 +74,7 @@ spec:
       type: string
       default: "false"
     {{ if eq .Values.default_cpd_install "watsonx" }}
-    - default: "watsonx-ai,watsonx-data,watsonx-data,watsonx-gov-mm,watsonx-gov-rc"
+    - default: "watsonx-ai,watsonx-orchestrate,watsonx-data"
       description: "Entitlement: watsonx-ai,watsonx-orchestrate,watsonx-data,watsonx-data,watsonx-gov-mm,watsonx-gov-rc...https://www.ibm.com/docs/en/software-hub/5.3.x?topic=entitlements-applying-your-without-node-pinning"
     {{ else }}
     - default: cpd-enterprise
@@ -368,7 +368,7 @@ spec:
     - name: OLM_CMD
       value: |-
         
-        IMAGE_PULL_CREDENTIALS=$(echo -n "cp:$(params.IBM_ENTITLEMENT_KEY)" | base64 -w 0
+        IMAGE_PULL_CREDENTIALS=$(echo -n "cp:$(params.IBM_ENTITLEMENT_KEY)" | base64 -w 0)
         cat <<EOF > dockerconfig.json 
         {
           "auths": {
