@@ -405,25 +405,27 @@ spec:
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |
-        case-download \
-        --components=cpd_platform,$(params.COMPONENTS) \
-        --release=$(params.VERSION) \
-        --from_oci=$(params.CASE_FROM_OCI) \
-        --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
-        --cluster_resources=true
-
-        [ $? -eq 0 ] && oc apply -f /tmp/work/cluster_scoped_resources.yaml --server-side --force-conflicts
-
-        install-components \ 
-        --license_acceptance=true \ 
-        --components=cpd_platform,$(params.COMPONENTS) \ 
-        --release=$(params.VERSION) \ 
-        --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \ 
-        --instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \ 
-        --block_storage_class=$(params.STG_CLASS_BLOCK) \ 
-        --file_storage_class=$(params.STG_CLASS_FILE) \ 
-        --image_pull_prefix=$(params.IMAGE_PULL_PREFIX) \  
-        --param-file=/tmp/install-options/install-options.yml
+            echo "CASE_DOWNLOAD"
+            case-download \
+            --components=cpd_platform,$(params.COMPONENTS) \
+            --release=$(params.VERSION) \
+            --from_oci=$(params.CASE_FROM_OCI) \
+            --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+            --cluster_resources=true
+            echo
+            [ $? -eq 0 ] && oc apply -f /tmp/work/cluster_scoped_resources.yaml --server-side --force-conflicts
+            echo
+            echo "INSTALL_COMPONENT"
+            install-components \
+            --license_acceptance=$(params.ACCEPT_LICENCE) \
+            --components=cpd_platform,$(params.COMPONENTS) \
+            --release=$(params.VERSION) \
+            --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
+            --instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+            --block_storage_class=$(params.STG_CLASS_BLOCK) \
+            --file_storage_class=$(params.STG_CLASS_FILE) \
+            --image_pull_prefix=$(params.IMAGE_PULL_PREFIX) \
+            --param-file=/tmp/install-options/install-options.yml
     runAfter:
     - image-pull-secret
     - set-db2-limited-privs
