@@ -383,7 +383,7 @@ spec:
         EOF
 
         for ns in $(params.PROJECT_CPD_INST_OPERATORS) $(params.PROJECT_CPD_INST_OPERANDS); do
-          if [ oc get secret ibm-entitlement-key -n ${ns} ]; then
+          if oc get secret ibm-entitlement-key -n ${ns} > /dev/null; then
             echo "ibm-entitlement-key already present in ns $ns"
           else
             oc create secret generic ibm-entitlement-key \
@@ -414,7 +414,7 @@ spec:
 
         [$? -eq 0 ] && oc apply -f /tmp/work/cluster_scoped_resources.yaml --server-side --force-conflicts
 
-        cpd-cli manage install-components \ 
+        install-components \ 
         --license_acceptance=true \ 
         --components=cpd_platform,$(params.COMPONENTS) \ 
         --release=$(params.VERSION) \ 
