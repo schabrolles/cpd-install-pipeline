@@ -1,4 +1,7 @@
 {{- if semverCompare "~5.3.0" .Values.cpd_version -}}
+{{/* Avoid to overwright the cpd-install-pipeline-install-option cm if exists */}}
+{{- $cm := lookup "v1" "ConfigMap" .Release.Namespace "cpd-install-pipeline-install-option" -}}
+{{- if not $cm }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -49,4 +52,5 @@ data:
       watsonxData:
         enable_lite_milvus: false
         scaleConfig: small
+{{- end -}}
 {{- end -}}

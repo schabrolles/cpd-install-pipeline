@@ -412,8 +412,11 @@ spec:
             --from_oci=$(params.CASE_FROM_OCI) \
             --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
             --cluster_resources=true
-            echo
-            [ $? -eq 0 ] && oc apply -f /tmp/work/cluster_scoped_resources.yaml --server-side --force-conflicts
+            [ $? -ne 0 ] && exit 1
+            echo 
+            echo "APPLY_CLUSTERSCOPED_RESOURCES"
+            oc apply -f /tmp/work/cluster_scoped_resources.yaml --server-side --force-conflicts
+            [ $? -ne 0 ] && exit 1
             echo
             echo "INSTALL_COMPONENT"
             install-components \
