@@ -1,4 +1,4 @@
-{{- if semverCompare "~5.2.0" .Values.cpd_version -}}
+{{- if semverCompare "~5.3.0" .Values.cpd_version -}}
 kind: ConfigMap
 apiVersion: v1
 metadata:
