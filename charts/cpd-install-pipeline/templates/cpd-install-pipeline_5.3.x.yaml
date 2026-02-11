@@ -404,9 +404,9 @@ spec:
       value: |-
         case-download \ 
         --components=cpd_platform,$(params.COMPONENTS) \
-        --release=${params.VERSION} \
+        --release=$(params.VERSION) \
         --from_oci=true \
-        --operator_ns=${params.PROJECT_CPD_INST_OPERATORS} \
+        --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
         --cluster_resources=true
 
         [$? -eq 0 ] && oc apply -f /tmp/work/cluster_scoped_resources.yaml --server-side --force-conflicts
