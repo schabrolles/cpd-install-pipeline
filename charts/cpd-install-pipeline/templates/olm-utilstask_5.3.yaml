@@ -41,6 +41,7 @@ spec:
     # - name: CASECTL_RESOLVE_CHARTS
     #   value: "false"
     script: |
+      export OLM_UTILS_IMAGE=$(params.OLM_UTILS_IMAGE)
       oc whoami --show-server
       OCP_TOKEN=$(oc whoami -t)
       login-to-ocp --token=${OCP_TOKEN} --server=https://kubernetes.default.svc.cluster.local
