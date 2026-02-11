@@ -382,13 +382,16 @@ spec:
         }
         EOF
 
-        oc create secret docker-registry ibm-entitlement-key \
-        --from-file ".dockerconfigjson=dockerconfig.json" \
-        --namespace=$(params.PROJECT_CPD_INST_OPERATORS)
+        for ns in $(params.PROJECT_CPD_INST_OPERATORS) $(params.PROJECT_CPD_INST_OPERANDS); do
+          if [ oc get secret ibm-entitlement-key -n ${ns} ]; then
+            echo "ibm-entitlement-key already present in ns $ns"
+          else
+            oc create secret generic ibm-entitlement-key \
+            --from-file=.dockerconfigjson=dockerconfig.json \
+            --namespace=${ns}
+          fi
+        done
 
-        oc create secret docker-registry ibm-entitlement-key \
-        --from-file ".dockerconfigjson=dockerconfig.json" \
-        --namespace=$(params.PROJECT_CPD_INST_OPERANDS)
     runAfter:
     - authorize-inst-topology
     taskRef:
@@ -405,7 +408,7 @@ spec:
         case-download \ 
         --components=cpd_platform,$(params.COMPONENTS) \
         --release=$(params.VERSION) \
-        --from_oci=true \
+        --from_oci=$(params.CASE_FROM_OCI) \
         --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
         --cluster_resources=true
 
