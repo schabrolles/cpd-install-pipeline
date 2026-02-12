@@ -12,7 +12,7 @@ default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v4"
 cpd_version: "5.3.0"
 
 # Cloud pak for Data mode to set as default in pipelines: cpd-enterprise, watsonx
-default_cpd_install: "cpd"
+default_cpd_install: "watsonx"
 
 storageClass:
   block: ocs-storagecluster-ceph-rbd
