@@ -266,6 +266,7 @@ spec:
           fi
           
   - name: openshift-ai
+    retries: 3
     params:
     - name: OLM_UTILS_IMAGE
       value: icr.io/cpopen/cpd/olm-utils-v4
@@ -401,6 +402,7 @@ spec:
       values:
       - 'true'
   - name: setup-mcg
+    retries: 3
     params:
     - name: OLM_UTILS_IMAGE
       value: icr.io/cpopen/cpd/olm-utils-v4
@@ -428,6 +430,7 @@ spec:
       values:
       - 'true'
   - name: knative-eventing
+    retries: 3
     params:
     - name: OLM_UTILS_IMAGE
       value: icr.io/cpopen/cpd/olm-utils-v4
@@ -451,6 +454,7 @@ spec:
       values:
       - 'true'
   - name: cert-manager
+    retries: 3
     params:
     - name: OLM_UTILS_IMAGE
       value: icr.io/cpopen/cpd/olm-utils-v4
