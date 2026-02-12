@@ -73,7 +73,7 @@ spec:
 {{- if semverCompare "~5.3.0" .Values.cpd_version }}
   - name: IMAGE_PULL_PREFIX
     value: "icr.io"
-{{ end -}}
+{{- end }}
   - name: CASE_FROM_OCI
     value: 'true'
   - name: OCI_LOCATION
@@ -81,7 +81,7 @@ spec:
 {{- if semverCompare "<5.3.0" .Values.cpd_version }}
   - name: NO_GPU
     value: 'true'
-{{ end -}}
+{{- end }}
   - name: CP-INSTALL-OPTIONS
     value: {{ .Release.Name }}-install-option
   pipelineRef:

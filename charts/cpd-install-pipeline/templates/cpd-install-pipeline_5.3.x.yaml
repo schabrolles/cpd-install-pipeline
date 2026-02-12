@@ -150,13 +150,64 @@ spec:
         type: string
       - name: mcg
         type: string
+      - name: cert-manager
+        type: string
+      - name: knative
+        type: string
+      - name: cert-manager
+        type: string
       spec: null
       steps:
       - computeResources: {}
-        image: 'icr.io/cpopen/cpd/olm-utils-v4:5.3.0'
+        image: $(params.OLM_UTILS_IMAGE):$(params.VERSION)
         name: check-prereq
         script: |
           COMPONENTS=$(params.COMPONENTS)
+
+          # Test if cert-manager is already present
+          RC=0
+          cat <<EOF |oc apply -f - || RC=1
+          apiVersion: cert-manager.io/v1
+          kind: Issuer
+          metadata:
+            name: test-selfsigned
+            namespace: {{ .Release.Namespace }}
+          spec:
+            selfSigned: {}
+          ---
+          apiVersion: cert-manager.io/v1
+          kind: Certificate
+          metadata:
+            name: selfsigned-cert
+            namespace: {{ .Release.Namespace }}
+          spec:
+            commonName: test.example.com
+            dnsNames:
+            - test.example.com
+            secretName: selfsigned-cert-tls
+            issuerRef:
+              name: test-selfsigned
+          EOF
+          
+          if [ $RC -ne 0 ]; then
+            echo "Trigger cert-manager installation"
+            echo 
+            echo -n "true" > $(results.cert-manager.path)
+          else
+            echo "> Waiting for certificate to be ready"
+            oc wait --for=condition=Ready=true certificate.cert-manager.io/selfsigned-cert -n {{ .Release.Namespace }}
+            if [ $? -ne 0 ]; then
+              oc delete issuers.cert-manager.io -n {{ .Release.Namespace }} test-selfsigned --ignore-not-found
+              oc delete certificate.cert-manager.io -n {{ .Release.Namespace }} selfsigned-cert --ignore-not-found
+              oc delete secrets selfsigned-cert-tls -n {{ .Release.Namespace }} --ignore-not-found
+              echo "Trigger cert-manager installation"
+              echo
+              echo -n "true" > $(results.cert-manager.path)
+            else
+              echo "cert-manager is already present"
+              echo
+            fi
+          fi
 
           if [[ ",$COMPONENTS," == *",watsonx_ai,"* ]]; then
             echo "watsonx_ai est présent"
@@ -167,7 +218,38 @@ spec:
             echo "watsonx_orchestrate est présent"
             echo -n "true" > $(results.openshift-ai.path)
             echo -n "true" > $(results.mcg.path)
+            echo -n "true" > $(results.knative.path)
           fi
+
+          if [[ ",$COMPONENTS," == *",watsonx_data,"* ]]; then
+            echo "watsonx_data est présent"
+          fi
+
+          if [[ ",$COMPONENTS," == *",ikc_standard,"* ]]; then
+            echo "ikc_standard requested"
+            echo -n "true" > $(results.openshift-ai.path)
+          fi
+
+          if [[ ",$COMPONENTS," == *",ikc_premium,"* ]]; then 
+            echo "ikc_premium requested" 
+            echo -n "true" > $(results.openshift-ai.path) 
+          fi
+
+          if [[ ",$COMPONENTS," == *",watson_speech,"* ]]; then
+            echo "watson_speech requested" 
+            echo -n "true" > $(results.openshift-ai.path) 
+          fi
+
+          if [[ ",$COMPONENTS," == *",watson_assistant,"* ]]; then 
+            echo "watson_assistant requested" 
+            echo -n "true" > $(results.openshift-ai.path) 
+          fi
+          
+          if [[ ",$COMPONENTS," == *",watson_bi_assistant,"* ]]; then 
+            echo "watson_bi_assistant requested" 
+            echo -n "true" > $(results.openshift-ai.path) 
+          fi
+          
   - name: openshift-ai
     params:
     - name: OLM_UTILS_IMAGE
@@ -211,7 +293,7 @@ spec:
 
         ###
         echo
-        echo "> Wait for pods in redhat-ods-operator to be Ready ..."
+        echo "> Wait for CSV redhat-ods-operator to be Available ..."
         until oc get csv -n redhat-ods-operator 2>/dev/null | grep -q rhods-operator; do
           echo -n "."
           sleep 2
@@ -288,9 +370,7 @@ spec:
 
         oc patch cm inferenceservice-config -n redhat-ods-applications -p '{"metadata":{"annotations":{"opendatahub.io/managed":"false"}}}'
 
-        oc get configmap inferenceservice-config -n redhat-ods-applications -o yaml | \
-          yq '.data.ingress |= (from_json | .domainTemplate = "example.com" | to_json | . style="literal")' | \
-          oc replace -f -
+        oc get configmap inferenceservice-config -n redhat-ods-applications -o yaml | yq '.data.ingress |= (from_json | .domainTemplate = "example.com" | to_json | . style="literal")' | oc replace -f -
     - name: CP-INSTALL-OPTIONS
       value: cpd-install-pipeline-install-option
     - name: AIRGAP-SECRET
@@ -305,12 +385,42 @@ spec:
       operator: in
       values:
       - 'true'
-  - name: mcg
+  - name: setup-mcg
     params:
     - name: OLM_UTILS_IMAGE
       value: icr.io/cpopen/cpd/olm-utils-v4
     - name: OLM_CMD
-      value: ls
+      value: |
+        echo "ODF Mutlicloud Gateway setup"
+        export NOOBAA_ACCOUNT_CREDENTIALS_SECRET=noobaa-admin
+        export NOOBAA_ACCOUNT_CERTIFICATE_SECRET=noobaa-s3-serving-cert
+
+        setup-mcg --components=watson_assistant --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) --noobaa_account_secret=${NOOBAA_ACCOUNT_CREDENTIALS_SECRET} --noobaa_cert_secret=${NOOBAA_ACCOUNT_CERTIFICATE_SECRET}
+
+        setup-mcg --components=watsonx_orchestrate --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) --noobaa_account_secret=${NOOBAA_ACCOUNT_CREDENTIALS_SECRET} --noobaa_cert_secret=${NOOBAA_ACCOUNT_CERTIFICATE_SECRET}
+    - name: CP-INSTALL-OPTIONS
+      value: cpd-install-pipeline-install-option
+    - name: AIRGAP-SECRET
+      value: private-registry-secret
+    runAfter:
+    - authorize-inst-topology
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(tasks.check-prereq.results.mcg)
+      operator: in
+      values:
+      - 'true'
+  - name: knative-eventing
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: icr.io/cpopen/cpd/olm-utils-v4
+    - name: OLM_CMD
+      value: |
+        echo "knative-setup"
+        echo
+        deploy-knative-eventing --release=$(params.VERSION) --block_storage_class=$(params.STG_CLASS_BLOCK)
     - name: CP-INSTALL-OPTIONS
       value: cpd-install-pipeline-install-option
     - name: AIRGAP-SECRET
@@ -321,7 +431,66 @@ spec:
       kind: Task
       name: olm-utils
     when:
-    - input: $(tasks.check-prereq.results.mcg)
+    - input: $(tasks.check-prereq.results.knative)
+      operator: in
+      values:
+      - 'true'
+  - name: cert-manager
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: icr.io/cpopen/cpd/olm-utils-v4
+    - name: OLM_CMD
+      value: |
+        echo "> Deploy Redhat Cert-Manager Operator"
+        cat <<EOF |oc apply -f -
+        apiVersion: v1
+        kind: Namespace 
+        metadata:
+          name: cert-manager-operator
+        ---
+        apiVersion: operators.coreos.com/v1
+        kind: OperatorGroup
+        metadata:
+          name: cert-manager-operator
+          namespace: cert-manager-operator
+        ---
+        apiVersion: operators.coreos.com/v1alpha1
+        kind: Subscription
+        metadata:
+          name: openshift-cert-manager-operator
+          namespace: cert-manager-operator
+        spec:
+            channel: stable-v1
+            installPlanApproval: Automatic
+            name: openshift-cert-manager-operator
+            source: redhat-operators
+            sourceNamespace: openshift-marketplace
+        EOF
+
+        echo 
+        echo "> Wait for CSV for cert-manager to be Available ..." 
+        until oc get csv -n cert-manager-operator 2>/dev/null | grep -q cert-manager-operator; do 
+          echo -n "."
+          sleep 2 
+        done 
+        echo 
+        echo "> Wait for InstallPan to Complete"
+        oc wait --for jsonpath='{.status.phase}'="Complete" installplans.operators.coreos.com --all -n cert-manager-operator
+        echo "> Wait for Operator Pods to be Ready" 
+        oc wait --for=condition=Ready=true pod --all -n cert-manager-operator
+        echo "> Wait for cert-manager Pods to be Ready"
+        oc wait --for=condition=Ready=true pod --all -n cert-manager
+    - name: CP-INSTALL-OPTIONS
+      value: cpd-install-pipeline-install-option
+    - name: AIRGAP-SECRET
+      value: private-registry-secret
+    runAfter:
+    - check-prereq
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(tasks.check-prereq.results.cert-manager)
       operator: in
       values:
       - 'true'
@@ -468,6 +637,8 @@ spec:
         --from_oci=$(params.CASE_FROM_OCI) \
         --oci_location=$(params.OCI_LOCATION)
     runAfter:
+    - check-prereq
+    - cert-manager
     - update-pull-secret
     - kubelet-pod-pids-limit
     - kubelet-db2-limited-priv
@@ -616,6 +787,9 @@ spec:
             --image_pull_prefix=$(params.IMAGE_PULL_PREFIX) \
             --param-file=/tmp/install-options/install-options.yml
     runAfter:
+    - openshift-ai
+    - setup-mcg
+    - knative-eventing
     - image-pull-secret
     - set-db2-limited-privs
     taskRef:
