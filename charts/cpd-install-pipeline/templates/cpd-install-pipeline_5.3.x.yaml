@@ -250,8 +250,18 @@ spec:
             echo -n "true" > $(results.openshift-ai.path) 
           fi
 
-          if [[ ",$COMPONENTS," == *",wca,"* ]]; then 
+          if [[ ",$COMPONENTS," == *",wca"* ]]; then 
             echo "wca requested" 
+            echo -n "true" > $(results.openshift-ai.path) 
+          fi
+
+          if [[ ",$COMPONENTS," == *",watsonx_data_premium"* ]]; then
+            echo "watsonx_data_premium requested" 
+            echo -n "true" > $(results.openshift-ai.path) 
+          fi
+
+          if [[ ",$COMPONENTS," == *",watsonx_dataintelligence"* ]]; then 
+            echo "watsonx_dataintelligence requested" 
             echo -n "true" > $(results.openshift-ai.path) 
           fi
 
