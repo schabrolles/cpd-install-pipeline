@@ -1,4 +1,4 @@
-{{- if semverCompare ">=5.1.0" .Values.cpd_version }}
+{{- if semverCompare "~5.1.0" .Values.cpd_version }}
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
