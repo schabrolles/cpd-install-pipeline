@@ -494,6 +494,7 @@ spec:
         echo "> Wait for Operator Pods to be Ready" 
         oc wait --for=condition=Ready=true pod --all -n cert-manager-operator
         echo "> Wait for cert-manager Pods to be Ready"
+        sleep 5
         oc wait --for=condition=Ready=true pod --all -n cert-manager
     - name: CP-INSTALL-OPTIONS
       value: cpd-install-pipeline-install-option
