@@ -264,6 +264,7 @@ spec:
             echo "watsonx_dataintelligence requested" 
             echo -n "true" > $(results.openshift-ai.path) 
           fi
+          
   - name: openshift-ai
     params:
     - name: OLM_UTILS_IMAGE
