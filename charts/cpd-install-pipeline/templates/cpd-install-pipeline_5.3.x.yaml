@@ -139,6 +139,192 @@ spec:
       name: CP-INSTALL-OPTIONS
       type: string
   tasks:
+  - name: check-prereq
+    params:
+    - name: COMPONENTS
+      value: $(params.COMPONENTS)
+    taskSpec:
+      metadata: {}
+      results:
+      - name: openshift-ai
+        type: string
+      - name: mcg
+        type: string
+      spec: null
+      steps:
+      - computeResources: {}
+        image: 'icr.io/cpopen/cpd/olm-utils-v4:5.3.0'
+        name: check-prereq
+        script: |
+          COMPONENTS=$(params.COMPONENTS)
+
+          if [[ ",$COMPONENTS," == *",watsonx_ai,"* ]]; then
+            echo "watsonx_ai est présent"
+            echo -n "true" > $(results.openshift-ai.path)
+          fi
+
+          if [[ ",$COMPONENTS," == *",watsonx_orchestrate,"* ]]; then
+            echo "watsonx_orchestrate est présent"
+            echo -n "true" > $(results.openshift-ai.path)
+            echo -n "true" > $(results.mcg.path)
+          fi
+  - name: openshift-ai
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: icr.io/cpopen/cpd/olm-utils-v4
+    - name: OLM_CMD
+      value: |
+        CHANNEL_VERSION=stable-2.25
+
+        if [ -z $CHANNEL_VERSION ]; then
+          echo "CHANNEL_VERSION variable for Openshift AI Operator not set"
+        fi
+
+        echo
+        echo "> Deploy Openshift AI Operator ($CHANNEL_VERSION)"
+        cat <<EOF |oc apply -f -
+        apiVersion: v1
+        kind: Namespace 
+        metadata:
+          name: redhat-ods-operator
+        ---
+        apiVersion: operators.coreos.com/v1
+        kind: OperatorGroup
+        metadata:
+          name: rhods-operator
+          namespace: redhat-ods-operator
+        ---
+        apiVersion: operators.coreos.com/v1alpha1
+        kind: Subscription
+        metadata:
+          name: rhods-operator
+          namespace: redhat-ods-operator
+        spec:
+          name: rhods-operator
+          channel: ${CHANNEL_VERSION}
+          source: redhat-operators
+          sourceNamespace: openshift-marketplace
+          config:
+            env:
+                - name: "DISABLE_DSC_CONFIG"
+        EOF
+
+        ###
+        echo
+        echo "> Wait for pods in redhat-ods-operator to be Ready ..."
+        until oc get csv -n redhat-ods-operator 2>/dev/null | grep -q rhods-operator; do
+          echo -n "."
+          sleep 2
+        done
+        echo
+        echo "> Wait for InstallPan to Complete"
+        oc wait --for jsonpath='{.status.phase}'="Complete" installplans.operators.coreos.com --all -n redhat-ods-operator
+        echo "> Wait for Operator Pods to be Ready"
+        oc wait --for=condition=Ready=true pod --all -n redhat-ods-operator
+
+        cat <<EOF |oc apply -f -
+        apiVersion: dscinitialization.opendatahub.io/v1
+        kind: DSCInitialization
+        metadata:
+          name: default-dsci
+        spec:
+          applicationsNamespace: redhat-ods-applications
+          monitoring:
+            managementState: Managed
+            namespace: redhat-ods-monitoring
+          serviceMesh:
+            managementState: Removed
+          trustedCABundle:
+            managementState: Managed
+            customCABundle: ""
+        EOF
+
+        ###
+        echo
+        echo "> Wait for default-dsci to be Ready ..."
+        oc wait --for jsonpath='{.status.phase}'="Ready" dscinitialization default-dsci
+
+        cat <<EOF |oc apply -f -
+        apiVersion: datasciencecluster.opendatahub.io/v1
+        kind: DataScienceCluster
+        metadata:
+          name: default-dsc
+        spec:
+          components:
+            codeflare:
+              managementState: Removed
+            dashboard:
+              managementState: Removed
+            datasciencepipelines:
+              managementState: Removed
+            kserve:
+              managementState: Managed
+              defaultDeploymentMode: RawDeployment
+              serving:
+                managementState: Removed
+                name: knative-serving
+            kueue:
+              managementState: Removed
+            modelmeshserving:
+              managementState: Removed
+            ray:
+              managementState: Removed
+            trainingoperator:
+              managementState: Managed
+            trustyai:
+              managementState: Removed
+            workbenches:
+              managementState: Removed
+        EOF
+
+        ###
+        echo
+        echo "> Wait for default-dsc to be Ready ..."
+        oc wait --for jsonpath='{.status.phase}'="Ready" datasciencecluster default-dsc --timeout 5m
+
+        ###
+        echo
+        echo "> Patch inferenceservice-config CM"
+
+        oc patch cm inferenceservice-config -n redhat-ods-applications -p '{"metadata":{"annotations":{"opendatahub.io/managed":"false"}}}'
+
+        oc get configmap inferenceservice-config -n redhat-ods-applications -o yaml | \
+          yq '.data.ingress |= (from_json | .domainTemplate = "example.com" | to_json | . style="literal")' | \
+          oc replace -f -
+    - name: CP-INSTALL-OPTIONS
+      value: cpd-install-pipeline-install-option
+    - name: AIRGAP-SECRET
+      value: private-registry-secret
+    runAfter:
+    - check-prereq
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(tasks.check-prereq.results.openshift-ai)
+      operator: in
+      values:
+      - 'true'
+  - name: mcg
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: icr.io/cpopen/cpd/olm-utils-v4
+    - name: OLM_CMD
+      value: ls
+    - name: CP-INSTALL-OPTIONS
+      value: cpd-install-pipeline-install-option
+    - name: AIRGAP-SECRET
+      value: private-registry-secret
+    runAfter:
+    - check-prereq
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(tasks.check-prereq.results.mcg)
+      operator: in
+      values:
+      - 'true'
   - name: kubelet-pod-pids-limit
     retries: 10
     params:
