@@ -249,7 +249,12 @@ spec:
             echo "watson_bi_assistant requested" 
             echo -n "true" > $(results.openshift-ai.path) 
           fi
-          
+
+          if [[ ",$COMPONENTS," == *",wca,"* ]]; then 
+            echo "wca requested" 
+            echo -n "true" > $(results.openshift-ai.path) 
+          fi
+
   - name: openshift-ai
     params:
     - name: OLM_UTILS_IMAGE
