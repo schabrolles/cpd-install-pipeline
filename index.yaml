@@ -2,23 +2,6 @@ apiVersion: v1
 entries:
   cpd-install-pipeline:
   - apiVersion: v2
-    appVersion: 5.3.0
-    created: "2026-02-12T13:17:30.915724303Z"
-    description: Tekton Pipeline to automate IBM Cloud Pak for Data Deployment
-    digest: 042c2eae2e32dfd5fbb0cc8350f608484192de09f854d27abe349c9288ca477c
-    home: https://github.com/schabrolles/cpd-install-pipeline
-    icon: https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/35b97ace-1a21-4673-8271-b93ef354ddcb
-    maintainers:
-    - email: s.chabrolles@fr.ibm.com
-      name: Sebastien Chabrolles
-    name: cpd-install-pipeline
-    sources:
-    - https://github.com/schabrolles/cpd-install-pipeline
-    type: application
-    urls:
-    - https://github.com/schabrolles/cpd-install-pipeline/releases/download/cpd-install-pipeline-5.3.9/cpd-install-pipeline-5.3.9.tgz
-    version: 5.3.0
-  - apiVersion: v2
     appVersion: 5.2.0
     created: "2026-02-10T17:12:21.150305932Z"
     description: Tekton Pipeline to automate IBM Cloud Pak for Data Deployment
