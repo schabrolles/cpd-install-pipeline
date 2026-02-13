@@ -29,7 +29,10 @@ spec:
         - name: OLM_UTILS_IMAGE
           value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}
         - name: OLM_CMD
-          value: oc patch cm feature-flags -n {{ .Values.tektonPatch.tektonNamespace }} -p '{"data":{"enable-param-enum":"{{ .Values.tektonPatch.activateEnum }}"}}'
+          value: |
+            oc patch tektonconfigs.operator.tekton.dev config -p '{"spec":{"pipeline":{"default-timeout-minutes":300}}}' --type=merge
+            
+            oc patch cm feature-flags -n {{ .Values.tektonPatch.tektonNamespace }} -p '{"data":{"enable-param-enum":"{{ .Values.tektonPatch.activateEnum }}"}}'
       taskRef:
         kind: Task
         name: olm-utils
