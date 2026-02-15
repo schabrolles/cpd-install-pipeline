@@ -212,7 +212,7 @@ spec:
           fi
 
           COMPONENTS=$(params.COMPONENTS)
-          
+
           if [[ ",$COMPONENTS," == *",watsonx_ai,"* ]]; then
             echo "watsonx_ai requested"
             echo -n "true" > $(results.openshift-ai.path)
@@ -727,13 +727,34 @@ spec:
         value: $(params.CP-INSTALL-OPTIONS)
       - name: OLM_CMD
         value: |-
-          apply-scheduler \
-          --release=$(params.VERSION) \
-          --license_acceptance=$(params.ACCEPT_LICENCE) \
-          --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
-          --case_download=true \
-          --from_oci=$(params.CASE_FROM_OCI) \
-          --oci_location=$(params.OCI_LOCATION)
+
+          IMAGE_PULL_CREDENTIALS=$(echo -n "cp:$(params.IBM_ENTITLEMENT_KEY)" | base64 -w 0)
+          cat <<EOF > dockerconfig.json 
+          {
+            "auths": {
+              "cp.icr.io": {
+                "auth": "${IMAGE_PULL_CREDENTIALS}"
+              },
+              "icr.io":{
+                "auth": "${IMAGE_PULL_CREDENTIALS}"
+              }
+            }
+          }
+          EOF
+
+          for ns in $(params.PROJECT_SCHEDULING_SERVICE); do
+            oc project ${ns} > /dev/null && echo "Project ${ns} already exists" || oc new-project ${ns}
+            if oc get secret ibm-entitlement-key -n ${ns} > /dev/null; then
+              echo "ibm-entitlement-key already present in ns $ns"
+            else
+              oc create secret generic ibm-entitlement-key \
+              --from-file=.dockerconfigjson=dockerconfig.json \
+              --namespace=${ns}
+            fi
+          done
+
+          apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --image_pull_prefix=$(params.IMAGE_PULL_PREFIX) --image_pull_secret=$(params.IMAGE_PULL_SECRET)
+ 
     runAfter:
     - apply-cluster-components
     taskRef:

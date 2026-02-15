@@ -33,7 +33,8 @@ data:
       # watsonx.governance parameters
       # ............................................................................
       watsonxGovernance:
-        installType: <install-type>
+        # installType: all,mm or rcf
+        installType: all
         enableFactsheet: true
         enableOpenpages: true
         enableOpenscale: true
