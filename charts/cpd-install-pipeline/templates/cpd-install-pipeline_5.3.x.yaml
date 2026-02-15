@@ -726,8 +726,7 @@ spec:
       - name: CP-INSTALL-OPTIONS
         value: $(params.CP-INSTALL-OPTIONS)
       - name: OLM_CMD
-        value: |-
-
+        value: |
           IMAGE_PULL_CREDENTIALS=$(echo -n "cp:$(params.IBM_ENTITLEMENT_KEY)" | base64 -w 0)
           cat <<EOF > dockerconfig.json 
           {
@@ -753,8 +752,7 @@ spec:
             fi
           done
 
-          apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --image_pull_prefix=$(params.IMAGE_PULL_PREFIX) --image_pull_secret=$(params.IMAGE_PULL_SECRET)
- 
+          apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --image_pull_prefix=$(params.IMAGE_PULL_PREFIX)
     runAfter:
     - apply-cluster-components
     taskRef:
