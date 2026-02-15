@@ -37,6 +37,10 @@ spec:
     value: {{ .Values.cpd_version }}
   - name: COMPONENTS
     value: wml,ws
+  - name: CP-INSTALL-OPTIONS
+    value: {{ .Release.Name }}-install-option
+  - name: INSTALL_PREREQUISITE
+    value: "true"
   - name: PROJECT_CPD_INST_OPERANDS
     value: cpd
   - name: PROJECT_CPD_INST_OPERATORS
@@ -82,8 +86,6 @@ spec:
   - name: NO_GPU
     value: 'true'
 {{- end }}
-  - name: CP-INSTALL-OPTIONS
-    value: {{ .Release.Name }}-install-option
   pipelineRef:
     name: {{ .Release.Name }}
   taskRunTemplate:

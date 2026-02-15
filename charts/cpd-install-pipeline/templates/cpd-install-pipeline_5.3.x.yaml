@@ -32,6 +32,14 @@ spec:
       description: "cloud-pak components to install (wml,watsonx_ai,watsonx_orchestrate,watsonx_data,watsonx_governance,...)https://www.ibm.com/docs/en/software-hub/5.3.x?topic=information-determining-which-components-install"
       name: COMPONENTS
       type: string
+    - default: "{{ .Release.Name }}-install-option"
+      description: configMap which contains cloud pak install-options (EDIT this configMap to customize your install before starting the pipeline)"
+      name: CP-INSTALL-OPTIONS
+      type: string
+    - default: "true"
+      description: Install needed prerequisite (like OpenshiftAI, knative, mcg ...) https://www.ibm.com/docs/en/software-hub/5.3.x?topic=cluster-installing-prerequisite-software
+      name: INSTALL_PREREQUISITE
+      type: string
     {{ if eq .Values.default_cpd_install "watsonx" }}
     - default: watsonx
     {{ else }}
@@ -134,10 +142,6 @@ spec:
       description: only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages
       name: OCI_LOCATION
       type: "string"
-    - default: "{{ .Release.Name }}-install-option"
-      description: configMap which contains cloud pak install-options
-      name: CP-INSTALL-OPTIONS
-      type: string
   tasks:
   - name: check-prereq
     params:
@@ -162,8 +166,6 @@ spec:
         image: $(params.OLM_UTILS_IMAGE):$(params.VERSION)
         name: check-prereq
         script: |
-          COMPONENTS=$(params.COMPONENTS)
-
           # Test if cert-manager is already present
           RC=0
           cat <<EOF |oc apply -f - || RC=1
@@ -209,16 +211,26 @@ spec:
             fi
           fi
 
+          COMPONENTS=$(params.COMPONENTS)
+          
           if [[ ",$COMPONENTS," == *",watsonx_ai,"* ]]; then
             echo "watsonx_ai requested"
             echo -n "true" > $(results.openshift-ai.path)
+            echo " => Setup OpenShift AI"
           fi
 
           if [[ ",$COMPONENTS," == *",watsonx_orchestrate,"* ]]; then
             echo "watsonx_orchestrate requested"
-            echo -n "true" > $(results.openshift-ai.path)
+
+            # Verify if watsonx_ai is requested in watsonx_orchestrate install-options
+            if [ $(yq '.non_olm.watsonxOrchestrate.watsonxAI.watsonxaiifm' /tmp/install-options/install-options.yml) = "true" ]; then
+              echo -n "true" > $(results.openshift-ai.path)
+              echo " => Setup OpenShift AI"
+            fi
             echo -n "true" > $(results.mcg.path)
+            echo " => Setup MultiCloud Gateway"
             echo -n "true" > $(results.knative.path)
+            echo " => Setup Knative Eventing"
           fi
 
           if [[ ",$COMPONENTS," == *",watsonx_data,"* ]]; then
@@ -228,43 +240,84 @@ spec:
           if [[ ",$COMPONENTS," == *",ikc_standard,"* ]]; then
             echo "ikc_standard requested"
             echo -n "true" > $(results.openshift-ai.path)
+            echo " => Setup OpenShift AI"
           fi
 
           if [[ ",$COMPONENTS," == *",ikc_premium,"* ]]; then 
             echo "ikc_premium requested" 
-            echo -n "true" > $(results.openshift-ai.path) 
+            echo -n "true" > $(results.openshift-ai.path)
+            echo " => Setup OpenShift AI"
           fi
 
           if [[ ",$COMPONENTS," == *",watson_speech,"* ]]; then
             echo "watson_speech requested" 
-            echo -n "true" > $(results.openshift-ai.path) 
+            echo -n "true" > $(results.openshift-ai.path)
+            echo " => Setup OpenShift AI"
+            echo -n "true" > $(results.mcg.path) 
+            echo " => Setup MultiCloud Gateway"
           fi
 
           if [[ ",$COMPONENTS," == *",watson_assistant,"* ]]; then 
             echo "watson_assistant requested" 
-            echo -n "true" > $(results.openshift-ai.path) 
+            echo -n "true" > $(results.openshift-ai.path)
+            echo " => Setup OpenShift AI"
           fi
           
           if [[ ",$COMPONENTS," == *",watson_bi_assistant,"* ]]; then 
             echo "watson_bi_assistant requested" 
-            echo -n "true" > $(results.openshift-ai.path) 
+            echo -n "true" > $(results.openshift-ai.path)
+            echo " => Setup OpenShift AI"
           fi
 
           if [[ ",$COMPONENTS," == *",wca"* ]]; then 
             echo "wca requested" 
-            echo -n "true" > $(results.openshift-ai.path) 
+            echo -n "true" > $(results.openshift-ai.path)
+            echo " => Setup OpenShift AI"
+            echo -n "true" > $(results.mcg.path)
+            echo " => Setup MultiCloud Gateway"
+            echo -n "true" > $(results.knative.path)
+            echo " => Setup Knative Eventing"
           fi
 
-          if [[ ",$COMPONENTS," == *",watsonx_data_premium"* ]]; then
+          if [[ ",$COMPONENTS," == *",watsonx_data_premium,"* ]]; then
             echo "watsonx_data_premium requested" 
-            echo -n "true" > $(results.openshift-ai.path) 
+            echo -n "true" > $(results.openshift-ai.path)
+            echo " => Setup OpenShift AI"
           fi
 
-          if [[ ",$COMPONENTS," == *",watsonx_dataintelligence"* ]]; then 
+          if [[ ",$COMPONENTS," == *",watsonx_dataintelligence,"* ]]; then 
             echo "watsonx_dataintelligence requested" 
-            echo -n "true" > $(results.openshift-ai.path) 
+            echo -n "true" > $(results.openshift-ai.path)
+            echo " => Setup OpenShift AI"
           fi
-          
+
+          if [[ ",$COMPONENTS," == *",watson_discovery,"* ]]; then
+            echo -n "true" > $(results.mcg.path)
+            echo " => Setup MultiCloud Gateway"
+          fi
+        volumeMounts:
+          - name: "install-options"
+            mountPath: /tmp/install-options/install-options.yml
+            subPath: install-options.yml
+          {{ if .Values.airgap.enabled }}
+          - name: "airgap-secret"
+            mountPath: /opt/ansible/{{ .Values.airgap.private_registry_secret }}.json
+            subPath: .dockerconfigjson
+          {{ end }}
+      volumes:
+        - name: "install-options"
+          configMap:
+            name: "$(params.CP-INSTALL-OPTIONS)"
+        {{ if .Values.airgap.enabled }}
+        - name: "airgap-secret"
+          secret:
+            secretName: $(params.AIRGAP-SECRET)
+        {{ end  }}
+    when:
+    - input: $(params.INSTALL_PREREQUISITE)
+      operator: in
+      values:
+      - 'true'         
   - name: openshift-ai
     retries: 3
     params:
@@ -823,6 +876,8 @@ spec:
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
+
+
         for cmp in $(echo $(params.ENTITLEMENT) | tr , " "); do
           apply-entitlement \
           --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
@@ -830,7 +885,7 @@ spec:
         done
     runAfter:
     - cpd-install
-    timeout: 0
+    timeout: "8h0m0s"
     taskRef:
       kind: Task
       name: olm-utils  
