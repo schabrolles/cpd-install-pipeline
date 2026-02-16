@@ -60,6 +60,13 @@ spec:
       description: cloud-pak ibm-licensing namespace
       name: PROJECT_LICENSE_SERVICE
       type: string
+    - default: "false"
+      description: Set [true] to enable ibm-scheduler
+      name: SCHEDULER
+      type: string
+      {{ if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{ end }}
     - default: ibm-scheduler
       description: cloud-pak scheduler namespace
       name: PROJECT_SCHEDULING_SERVICE
@@ -92,13 +99,6 @@ spec:
       type: string
       {{ if .Values.tektonPatch.activateEnum }}
       enum: ["cpd-enterprise", "cpd-standard", "watsonx-ai", "watsonx-data", "watsonx-gov-model-management", "watsonx-gov-risk-compliance"]
-      {{ end }}
-    - default: "false"
-      description: Set [true] to enable ibm-scheduler
-      name: SCHEDULER
-      type: string
-      {{ if .Values.tektonPatch.activateEnum }}
-      enum: ["true", "false"]
       {{ end }}
     - name: ACCEPT_LICENCE
       description: 'Please Accept LICENCE (set [true])'
