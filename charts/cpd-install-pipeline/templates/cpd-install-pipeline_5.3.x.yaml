@@ -754,7 +754,7 @@ spec:
 
           ## BUG with 5.3.0 - need to add --from_oci=true
           #apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --image_pull_prefix=$(params.IMAGE_PULL_PREFIX)
-          cpd-cli manage apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --from_oci=$(params.CASE_FROM_OCI) --use_olm=true
+          apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --from_oci=$(params.CASE_FROM_OCI) --use_olm=true
     runAfter:
     - apply-cluster-components
     taskRef:
