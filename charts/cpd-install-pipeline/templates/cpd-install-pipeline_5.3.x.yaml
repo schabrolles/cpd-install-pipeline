@@ -886,6 +886,7 @@ spec:
     - knative-eventing
     - image-pull-secret
     - set-db2-limited-privs
+    timeout: "8h0m0s"
     taskRef:
       kind: Task
       name: olm-utils
@@ -906,7 +907,7 @@ spec:
         done
     runAfter:
     - cpd-install
-    timeout: "8h0m0s"
+    timeout: "1h0m0s"
     taskRef:
       kind: Task
       name: olm-utils  
