@@ -764,24 +764,24 @@ spec:
             fi
           done
 
-          echo "CASE_DOWNLOAD"
-          case-download \
-          --components=scheduler \
-          --release=$(params.VERSION) \
-          --from_oci=$(params.CASE_FROM_OCI) \
-          --operator_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
-          --cluster_resources=true
-          [ $? -ne 0 ] && exit 1 
-          echo 
-          echo "APPLY_CLUSTERSCOPED_RESOURCES" 
-          oc apply -f /tmp/work/cluster_scoped_resources.yaml --server-side --force-conflicts 
-          [ $? -ne 0 ] && exit 1 
-          echo 
-          echo "INSTALL_SCEDULER"
+          # echo "CASE_DOWNLOAD"
+          # case-download \
+          # --components=scheduler \
+          # --release=$(params.VERSION) \
+          # --from_oci=$(params.CASE_FROM_OCI) \
+          # --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
+          # --cluster_resources=true
+          # [ $? -ne 0 ] && exit 1 
+          # echo 
+          # echo "APPLY_CLUSTERSCOPED_RESOURCES" 
+          # oc apply -f /tmp/work/cluster_scoped_resources.yaml --server-side --force-conflicts 
+          # [ $? -ne 0 ] && exit 1 
+          # echo 
+          # echo "INSTALL_SCEDULER"
 
-          apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --image_pull_prefix=$(params.IMAGE_PULL_PREFIX)
+          # apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --image_pull_prefix=$(params.IMAGE_PULL_PREFIX)
           ## BUG with 5.3.0 - need to add --from_oci=tru
-          # apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --from_oci=$(params.CASE_FROM_OCI) --use_olm=true
+          apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --from_oci=$(params.CASE_FROM_OCI) --use_olm=true
     runAfter:
     - apply-cluster-components
     taskRef:
