@@ -88,6 +88,14 @@ spec:
       description: "run test performance validation against Provided StorageClass"
       type: string
       default: "false"
+    - name: GPU_OPERATOR_INSTALL
+      description: "Install GPU Operator with requirement like NFD operator"
+      type: string
+      default: "false"
+    - name: GPU_OPERATOR_CHANNEL
+      description: "GPU Operator channel version"
+      type: string
+      default: "v25.3"
     {{ if eq .Values.default_cpd_install "watsonx" }}
     - default: "watsonx-ai,watsonx-orchestrate,watsonx-data"
       description: "Entitlement: watsonx-ai,watsonx-orchestrate,watsonx-data,watsonx-data,watsonx-gov-mm,watsonx-gov-rc...https://www.ibm.com/docs/en/software-hub/5.3.x?topic=entitlements-applying-your-without-node-pinning"
@@ -160,6 +168,8 @@ spec:
         type: string
       - name: cert-manager
         type: string
+      - name: gpu-operator
+        type: string
       spec: null
       steps:
       - computeResources: {}
@@ -227,6 +237,8 @@ spec:
 
           if [[ ",$COMPONENTS," == *",watsonx_ai,"* ]]; then
             echo "watsonx_ai requested"
+            echo -n "true" > $(results.gpu-operator.path)
+            echo " => Setup GPU Operator"
             echo -n "true" > $(results.openshift-ai.path)
             echo " => Setup OpenShift AI"
           fi
@@ -236,6 +248,8 @@ spec:
 
             # Verify if watsonx_ai is requested in watsonx_orchestrate install-options
             if [ $(yq '.non_olm.watsonxOrchestrate.watsonxAI.watsonxaiifm' /tmp/install-options/install-options.yml) = "true" ]; then
+              echo -n "true" > $(results.gpu-operator.path)
+              echo " => Setup GPU Operator"
               echo -n "true" > $(results.openshift-ai.path)
               echo " => Setup OpenShift AI"
             fi
@@ -247,22 +261,37 @@ spec:
 
           if [[ ",$COMPONENTS," == *",watsonx_data,"* ]]; then
             echo "watsonx_data requested"
+            echo -n "true" > $(results.gpu-operator.path)
+            echo " => Setup GPU Operator"
           fi
 
           if [[ ",$COMPONENTS," == *",ikc_standard,"* ]]; then
             echo "ikc_standard requested"
+            echo -n "true" > $(results.gpu-operator.path)
+            echo " => Setup GPU OPERATOR"
+            echo -n "true" > $(results.openshift-ai.path)
+            echo " => Setup OpenShift AI"
+
+          fi
+
+          if [[ ",$COMPONENTS," == *",ikc_premium,"* ]]; then 
+            echo "ikc_premium requested"
+            echo -n "true" > $(results.gpu-operator.path)
+            echo " => Setup GPU OPERATOR"
             echo -n "true" > $(results.openshift-ai.path)
             echo " => Setup OpenShift AI"
           fi
 
-          if [[ ",$COMPONENTS," == *",ikc_premium,"* ]]; then 
-            echo "ikc_premium requested" 
-            echo -n "true" > $(results.openshift-ai.path)
-            echo " => Setup OpenShift AI"
+          if [[ ",$COMPONENTS," == *",wml,"* ]]; then
+            echo "wml requested"
+            echo -n "true" > $(results.gpu-operator.path)
+            echo " => Setup GPU OPERATOR"
           fi
 
           if [[ ",$COMPONENTS," == *",watson_speech,"* ]]; then
             echo "watson_speech requested" 
+            echo -n "true" > $(results.gpu-operator.path)
+            echo " => Setup GPU OPERATOR"
             echo -n "true" > $(results.openshift-ai.path)
             echo " => Setup OpenShift AI"
             echo -n "true" > $(results.mcg.path) 
@@ -270,19 +299,25 @@ spec:
           fi
 
           if [[ ",$COMPONENTS," == *",watson_assistant,"* ]]; then 
-            echo "watson_assistant requested" 
+            echo "watson_assistant requested"
+            echo -n "true" > $(results.gpu-operator.path)
+            echo " => Setup GPU OPERATOR"
             echo -n "true" > $(results.openshift-ai.path)
             echo " => Setup OpenShift AI"
           fi
           
           if [[ ",$COMPONENTS," == *",watson_bi_assistant,"* ]]; then 
             echo "watson_bi_assistant requested" 
+            echo -n "true" > $(results.gpu-operator.path)
+            echo " => Setup GPU OPERATOR"
             echo -n "true" > $(results.openshift-ai.path)
             echo " => Setup OpenShift AI"
           fi
 
           if [[ ",$COMPONENTS," == *",wca"* ]]; then 
             echo "wca requested" 
+            echo -n "true" > $(results.gpu-operator.path)
+            echo " => Setup GPU OPERATOR"
             echo -n "true" > $(results.openshift-ai.path)
             echo " => Setup OpenShift AI"
             echo -n "true" > $(results.mcg.path)
@@ -329,12 +364,281 @@ spec:
     - input: $(params.INSTALL_PREREQUISITE)
       operator: in
       values:
-      - 'true'         
+      - 'true'
+  - name: nfd-operator
+    retries: 3
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |
+        echo
+        echo "> Deploy Node Feature Discovery Operator"
+        cat <<EOF |oc apply -f -
+        apiVersion: v1
+        kind: Namespace 
+        metadata:
+          name: openshift-nfd
+        ---
+        apiVersion: operators.coreos.com/v1
+        kind: OperatorGroup
+        metadata:
+          name: nfd-operator
+          namespace: openshift-nfd
+        spec:
+          targetNamespaces:
+          - openshift-nfd
+          upgradeStrategy: Default
+        ---
+        apiVersion: operators.coreos.com/v1alpha1
+        kind: Subscription
+        metadata:
+          name: nfd
+          namespace: openshift-nfd
+        spec:
+          channel: stable
+          installPlanApproval: Automatic
+          name: nfd
+          source: redhat-operators
+          sourceNamespace: openshift-marketplace
+        EOF
+
+        ###
+        echo
+        echo "> Wait for CSV nfd-operator to be Available ..."
+        until oc get csv -n openshift-nfd 2>/dev/null | grep -q nfd; do
+          echo -n "."
+          sleep 2
+        done
+        echo
+        echo "> Wait for InstallPan to Complete"
+        oc wait --for jsonpath='{.status.phase}'="Complete" installplans.operators.coreos.com --all -n openshift-nfd
+        echo "> Wait for Operator Pods to be Ready"
+        oc wait --for=condition=Ready=true pod --all -n openshift-nfd
+
+        echo
+        echo "Create nfd-instance"
+        cat <<EOF |oc apply -f -
+        apiVersion: nfd.openshift.io/v1
+        kind: NodeFeatureDiscovery
+        metadata:
+          name: nfd-instance
+          namespace: openshift-nfd
+        spec:
+          enableTaints: false
+          instance: ''
+          operand:
+            imagePullPolicy: IfNotPresent
+            servicePort: 12000
+          prunerOnDelete: false
+          topologyUpdater: false
+          workerConfig:
+            configData: |
+              core:
+                sleepInterval: 60s
+              sources:
+                pci:
+                  deviceClassWhitelist:
+                    - "0200"
+                    - "03"
+                    - "12"
+                  deviceLabelFields:
+                    - "vendor"
+        EOF
+    - name: CP-INSTALL-OPTIONS
+      value: cpd-install-pipeline-install-option
+    - name: AIRGAP-SECRET
+      value: private-registry-secret
+    runAfter:
+    - check-prereq
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(params.GPU_OPERATOR_INSTALL)
+      operator: in
+      values:
+      - 'true'
+  - name: gpu-operaor
+    retries: 3
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |
+        
+        CHANNEL_VERSION=$(params.GPU_OPERATOR_CHANNEL)
+        
+        if [ -z $CHANNEL_VERSION ]; then
+          echo "CHANNEL_VERSION variable for NVIDIA GPU Operator not set"
+        fi
+
+        echo
+        echo "> Deploy NVIDIA GPU Operator"
+        cat <<EOF |oc apply -f -
+        apiVersion: v1
+        kind: Namespace 
+        metadata:
+          name: nvidia-gpu-operator
+        ---
+        apiVersion: operators.coreos.com/v1
+        kind: OperatorGroup
+        metadata:
+          name: nvidia-gpu-operator
+          namespace: nvidia-gpu-operator
+        spec:
+          targetNamespaces:
+          - nvidia-gpu-operator
+          upgradeStrategy: Default
+        ---
+        apiVersion: operators.coreos.com/v1alpha1
+        kind: Subscription
+        metadata:
+          name: gpu-operator-certified
+          namespace: nvidia-gpu-operator
+        spec:
+          channel: $CHANNEL_VERSION
+          installPlanApproval: Manual
+          name: gpu-operator-certified
+          source: certified-operators
+          sourceNamespace: openshift-marketplace
+        EOF
+
+        ###
+        echo
+        echo "> Wait for CSV nvidia-gpu-operator to be Available ..."
+        until oc get csv -n nvidia-gpu-operator 2>/dev/null | grep -q gpu-operator-certified; do
+          echo -n "."
+          sleep 2
+        done
+        echo
+        echo "> Wait for InstallPan to Complete"
+        oc wait --for jsonpath='{.status.phase}'="Complete" installplans.operators.coreos.com --all -n nvidia-gpu-operator
+        echo "> Wait for Operator Pods to be Ready"
+        oc wait --for=condition=Ready=true pod --all -n nvidia-gpu-operator
+
+        echo
+        echo "Create nfd-instance"
+        cat <<EOF |oc apply -f -
+        apiVersion: nvidia.com/v1
+        kind: ClusterPolicy
+        metadata:
+          name: gpu-cluster-policy
+        spec:
+          vgpuDeviceManager:
+            config:
+              default: default
+            enabled: true
+          migManager:
+            config:
+              default: all-disabled
+              name: default-mig-parted-config
+            enabled: true
+          operator:
+            defaultRuntime: crio
+            initContainer: {}
+            runtimeClass: nvidia
+            use_ocp_driver_toolkit: true
+          dcgm:
+            enabled: true
+          gfd:
+            enabled: true
+          dcgmExporter:
+            config:
+              name: ''
+            enabled: true
+            serviceMonitor:
+              enabled: true
+          cdi:
+            default: false
+            enabled: false
+          driver:
+            licensingConfig:
+              configMapName: ''
+              nlsEnabled: true
+            enabled: true
+            kernelModuleType: auto
+            certConfig:
+              name: ''
+            useNvidiaDriverCRD: false
+            kernelModuleConfig:
+              name: ''
+            upgradePolicy:
+              autoUpgrade: true
+              drain:
+                deleteEmptyDir: false
+                enable: false
+                force: false
+                timeoutSeconds: 300
+              maxParallelUpgrades: 1
+              maxUnavailable: 25%
+              podDeletion:
+                deleteEmptyDir: false
+                force: false
+                timeoutSeconds: 300
+              waitForCompletion:
+                timeoutSeconds: 0
+            repoConfig:
+              configMapName: ''
+            virtualTopology:
+              config: ''
+          devicePlugin:
+            config:
+              default: ''
+              name: ''
+            enabled: true
+            mps:
+              root: /run/nvidia/mps
+          gdrcopy:
+            enabled: false
+          kataManager:
+            config:
+              artifactsDir: /opt/nvidia-gpu-operator/artifacts/runtimeclasses
+          mig:
+            strategy: single
+          sandboxDevicePlugin:
+            enabled: true
+          validator:
+            plugin:
+              env: []
+          nodeStatusExporter:
+            enabled: true
+          daemonsets:
+            rollingUpdate:
+              maxUnavailable: '1'
+            updateStrategy: RollingUpdate
+          sandboxWorkloads:
+            defaultWorkload: container
+            enabled: false
+          gds:
+            enabled: false
+          vgpuManager:
+            enabled: false
+          vfioManager:
+            enabled: true
+          toolkit:
+            enabled: true
+            installDir: /usr/local/nvidia
+        EOF
+    - name: CP-INSTALL-OPTIONS
+      value: cpd-install-pipeline-install-option
+    - name: AIRGAP-SECRET
+      value: private-registry-secret
+    runAfter:
+    - nfd-operator
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(params.GPU_OPERATOR_INSTALL)
+      operator: in
+      values:
+      - 'true'
   - name: openshift-ai
     retries: 3
     params:
     - name: OLM_UTILS_IMAGE
-      value: icr.io/cpopen/cpd/olm-utils-v4
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: OLM_CMD
       value: |
         CHANNEL_VERSION=stable-2.25
@@ -457,7 +761,7 @@ spec:
     - name: AIRGAP-SECRET
       value: private-registry-secret
     runAfter:
-    - check-prereq
+    - gpu-operaor
     taskRef:
       kind: Task
       name: olm-utils
@@ -466,11 +770,15 @@ spec:
       operator: in
       values:
       - 'true'
+    - input: $(params.INSTALL_PREREQUISITE)
+      operator: in
+      values:
+      - 'true'
   - name: setup-mcg
     retries: 3
     params:
     - name: OLM_UTILS_IMAGE
-      value: icr.io/cpopen/cpd/olm-utils-v4
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: OLM_CMD
       value: |
         echo "ODF Mutlicloud Gateway setup"
@@ -494,11 +802,15 @@ spec:
       operator: in
       values:
       - 'true'
+    - input: $(params.INSTALL_PREREQUISITE)
+      operator: in
+      values:
+      - 'true'
   - name: knative-eventing
     retries: 3
     params:
     - name: OLM_UTILS_IMAGE
-      value: icr.io/cpopen/cpd/olm-utils-v4
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: OLM_CMD
       value: |
         echo "knative-setup"
@@ -515,6 +827,10 @@ spec:
       name: olm-utils
     when:
     - input: $(tasks.check-prereq.results.knative)
+      operator: in
+      values:
+      - 'true'
+    - input: $(params.INSTALL_PREREQUISITE)
       operator: in
       values:
       - 'true'
@@ -576,6 +892,10 @@ spec:
       name: olm-utils
     when:
     - input: $(tasks.check-prereq.results.cert-manager)
+      operator: in
+      values:
+      - 'true'
+    - input: $(params.INSTALL_PREREQUISITE)
       operator: in
       values:
       - 'true'
@@ -648,7 +968,7 @@ spec:
         values:
         - "true"
         - "yes"
-  - name: update-pull-secret
+  - name: update-global-pull-secret
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
@@ -724,7 +1044,7 @@ spec:
     runAfter:
     - check-prereq
     - cert-manager
-    - update-pull-secret
+    - update-global-pull-secret
     - kubelet-pod-pids-limit
     - kubelet-db2-limited-priv
     taskRef:
@@ -805,7 +1125,11 @@ spec:
         --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
         --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
     runAfter:
-    - apply-scheduler
+    - check-prereq
+    - cert-manager
+    - update-global-pull-secret
+    - kubelet-pod-pids-limit
+    - kubelet-db2-limited-priv
     taskRef:
       kind: Task
       name: olm-utils
@@ -913,6 +1237,7 @@ spec:
     - knative-eventing
     - image-pull-secret
     - set-db2-limited-privs
+    - apply-scheduler
     timeout: "8h0m0s"
     taskRef:
       kind: Task
@@ -925,8 +1250,6 @@ spec:
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
-
-
         for cmp in $(echo $(params.ENTITLEMENT) | tr , " "); do
           apply-entitlement \
           --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \

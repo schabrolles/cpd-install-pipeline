@@ -27,6 +27,10 @@ spec:
       description: cloud-pak ibm-licensing namespace ([false] means do-not-uninstall)
       name: PROJECT_LICENSE_SERVICE
       type: string
+    - default: 'false'
+      description: cloud-pak ibm-scheduler namespace ([false] means do-not-uninstall)
+      name: PROJECT_SCHEDULING_SERVICE
+      type: string
   tasks:
     - name: components-delete-cr
       params:
@@ -146,3 +150,38 @@ spec:
             - 'false'
             - 'False'
             - 'No'
+    - name: remove-ibm-scheduler
+      params:
+      - name: OLM_UTILS_IMAGE
+        value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
+      - name: OLM_CMD
+        value: |-
+          PROJECT_SCHEDULING_SERVICE=$( echo $(params.PROJECT_SCHEDULING_SERVICE) | tr -d '[:space:]')
+          oc get project ${PROJECT_SCHEDULING_SERVICE} > /dev/null 2>&1
+          if [ $? -eq 0 ];then
+              oc delete Scheduling ibm-cpd-scheduler --namespace $(params.PROJECT_SCHEDULING_SERVICE) --ignore-not-found
+              
+              oc delete clusterrole -l=icpdsupport/addOnId=scheduling --ignore-not-found 
+              oc delete clusterrolebinding -l=icpdsupport/addOnId=scheduling --ignore-not-found
+              
+              while $(oc get ns ${PROJECT_SCHEDULING_SERVICE} > /dev/null 2>&1);do
+                  echo "wait for NS ${PROJECT_SCHEDULING_SERVICE} deletion"
+                  sleep 5
+              done
+          else
+              echo "Project ${PROJECT_SCHEDULING_SERVICE} does not exist, skipping"
+          fi
+      - name: CP-INSTALL-OPTIONS
+        value: "{{ .Release.Name }}-install-option"
+      runAfter:
+      - delete-olm-artifacts
+      taskRef:
+        kind: Task
+        name: olm-utils
+      when:
+      - input: $(params.PROJECT_CERT_MANAGER)
+        operator: notin
+        values:
+        - 'false'
+        - 'False'
+        - 'No'
