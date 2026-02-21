@@ -252,19 +252,19 @@ spec:
               dockerconfigfile=/var/lib/kubelet/config.json
             ;;
           esac
-          oc debug $(oc get node -o name | head -n1) -- chroot /host cat $dockerconfigfile > /tmp/config.json
+            oc debug $(oc get node -o name | head -n1) -- chroot /host cat $dockerconfigfile > /tmp/config.json
 
-          {{ if not .Values.airgap.enabled }}
-          cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
-          {{ else }}
-          oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to=/tmp
-          jq -s '.[0] * .[1]' /tmp/config.json /tmp/.dockerconfigjson > /tmp/config.json.new
-          {{ end }}
+            {{ if not .Values.airgap.enabled }}
+            cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
+            {{ else }}
+            oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to=/tmp
+            jq -s '.[0] * .[1]' /tmp/config.json /tmp/.dockerconfigjson > /tmp/config.json.new
+            {{ end }}
 
-          sleep 1
-          for n in `oc get node -o name`; do 
-            oc adm copy-to-node --copy=/tmp/config.json.new=$dockerconfigfile $n
-          done
+            sleep 1
+            for n in `oc get node -o name`; do 
+              oc adm copy-to-node --copy=/tmp/config.json.new=$dockerconfigfile $n
+            done
         fi
     taskRef:
       kind: Task
@@ -334,7 +334,7 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
-  - name: install-components
+  - name: setup-instance
     params:
     - name: OLM_UTILS_IMAGE
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
@@ -342,7 +342,7 @@ spec:
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
-        install-components \
+        setup-instance \
         --release=$(params.VERSION) \
         --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
         --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
@@ -375,7 +375,7 @@ spec:
           namespace: $(params.PROJECT_CPD_INST_OPERATORS)
         EOF
     runAfter:
-    - authorize-inst-topology
+    - setup-instance
     taskRef:
       kind: Task
       name: olm-utils
@@ -399,7 +399,6 @@ spec:
           --entitlement=$cmp --production=$(params.PRODUCTION) --apply_branding=true
         done
     runAfter:
-    - install-components
     - set-db2-limited-privs
     taskRef:
       kind: Task
