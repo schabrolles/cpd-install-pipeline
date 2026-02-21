@@ -375,7 +375,7 @@ spec:
           namespace: $(params.PROJECT_CPD_INST_OPERATORS)
         EOF
     runAfter:
-    - setup-instance
+    - authorize-inst-topology
     taskRef:
       kind: Task
       name: olm-utils
@@ -399,6 +399,7 @@ spec:
           --entitlement=$cmp --production=$(params.PRODUCTION) --apply_branding=true
         done
     runAfter:
+    - install-components
     - set-db2-limited-privs
     taskRef:
       kind: Task
