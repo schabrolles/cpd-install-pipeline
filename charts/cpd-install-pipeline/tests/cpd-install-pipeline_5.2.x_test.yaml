@@ -1,0 +1,399 @@
+suite: Test cpd-install-pipeline_5.2.x
+templates:
+  - templates/cpd-install-pipeline_5.2.x.yaml
+tests:
+  # Test 1: Pipeline template defines all expected parameters with default values
+  - it: should define all expected parameters with correct default values for non-airgap mode
+    set:
+      cpd_version: "5.2.0"
+      airgap.enabled: false
+      default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v3"
+      storageClass.block: "test-block-storage"
+      storageClass.file: "test-file-storage"
+      default_cpd_install: "cpd"
+      arch: "x86"
+    asserts:
+      - isKind:
+          of: Pipeline
+      - equal:
+          path: metadata.name
+          value: cpd-install
+      - contains:
+          path: spec.params
+          content:
+            name: OLM_UTILS_IMAGE
+            description: olm-utils images
+            type: string
+            default: "icr.io/cpopen/cpd/olm-utils-v3"
+      - contains:
+          path: spec.params
+          content:
+            name: VERSION
+            description: cloud-pak for data version
+            type: string
+            default: "5.2.0"
+      - contains:
+          path: spec.params
+          content:
+            name: COMPONENTS
+            description: "cloud-pak components to install (wml,watsonx_ai,watsonx_governance,watsonx_data,wca_ansible ...)https://www.ibm.com/docs/en/software-hub/5.2.x?topic=information-determining-which-components-install"
+            type: string
+            default: "wml,ws"
+      - contains:
+          path: spec.params
+          content:
+            name: PROJECT_CPD_INST_OPERANDS
+            description: cloud-pak operand namspace
+            type: string
+            default: "cpd"
+      - contains:
+          path: spec.params
+          content:
+            name: PROJECT_CPD_INST_OPERATORS
+            description: cloud-pak operators namspace
+            type: string
+            default: "cpd-operators"
+      - contains:
+          path: spec.params
+          content:
+            name: STG_CLASS_BLOCK
+            description: StorageClass for Block
+            type: string
+            default: "test-block-storage"
+      - contains:
+          path: spec.params
+          content:
+            name: STG_CLASS_FILE
+            description: StorageClass for Files
+            type: string
+            default: "test-file-storage"
+      - contains:
+          path: spec.params
+          content:
+            name: ACCEPT_LICENCE
+            description: 'Please Accept LICENCE (set [true])'
+            type: string
+      - contains:
+          path: spec.params
+          content:
+            name: IBM_ENTITLEMENT_KEY
+            description: your ICR key to access cp.icr.io
+            type: string
+
+  - it: should define watsonx default parameters when default_cpd_install is watsonx
+    set:
+      cpd_version: "5.2.1"
+      default_cpd_install: "watsonx"
+      airgap.enabled: false
+    asserts:
+      - contains:
+          path: spec.params
+          content:
+            name: COMPONENTS
+            description: "cloud-pak components to install (wml,watsonx_ai,watsonx_governance,watsonx_data,wca_ansible ...)https://www.ibm.com/docs/en/software-hub/5.2.x?topic=information-determining-which-components-install"
+            type: string
+            default: "watsonx_ai,watsonx_governance,watsonx_data"
+      - contains:
+          path: spec.params
+          content:
+            name: PROJECT_CPD_INST_OPERANDS
+            description: cloud-pak operand namspace
+            type: string
+            default: "watsonx"
+      - contains:
+          path: spec.params
+          content:
+            name: PROJECT_CPD_INST_OPERATORS
+            description: cloud-pak operators namspace
+            type: string
+            default: "watsonx-operators"
+
+  # Test 2: Pipeline tasks execute in correct order with appropriate conditions
+  - it: should define tasks in correct execution order
+    set:
+      cpd_version: "5.2.0"
+      airgap.enabled: false
+    asserts:
+      - contains:
+          path: spec.tasks
+          content:
+            name: update-pull-secret
+      - contains:
+          path: spec.tasks
+          content:
+            name: apply-cluster-components
+            runAfter:
+              - update-pull-secret
+              - kubelet-pod-pids-limit
+              - kubelet-db2-limited-priv
+      - contains:
+          path: spec.tasks
+          content:
+            name: apply-scheduler
+            runAfter:
+              - apply-cluster-components
+      - contains:
+          path: spec.tasks
+          content:
+            name: authorize-inst-topology
+            runAfter:
+              - apply-scheduler
+      - contains:
+          path: spec.tasks
+          content:
+            name: install-components
+            runAfter:
+              - authorize-inst-topology
+      - contains:
+          path: spec.tasks
+          content:
+            name: apply-entitlement
+            runAfter:
+              - set-db2-limited-privs
+      - contains:
+          path: spec.tasks
+          content:
+            name: component-apply-olm
+            runAfter:
+              - apply-entitlement
+      - contains:
+          path: spec.tasks
+          content:
+            name: components-apply-cr
+            runAfter:
+              - component-apply-olm
+
+  # Test 3: Conditional logic for airgap enabled/disabled states
+  - it: should use airgap pipeline name when airgap is enabled
+    set:
+      cpd_version: "5.2.0"
+      airgap.enabled: true
+      airgap.private_registry_secret: "my-registry-secret"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: cpd-install-airgap
+      - contains:
+          path: spec.params
+          content:
+            name: PRIVATE_REGISTRY_SECRET
+            description: registry-secret containing your private registry credential
+            type: string
+            default: "my-registry-secret"
+      - notContains:
+          path: spec.params
+          content:
+            name: IBM_ENTITLEMENT_KEY
+
+  - it: should use standard pipeline name when airgap is disabled
+    set:
+      cpd_version: "5.2.0"
+      airgap.enabled: false
+    asserts:
+      - equal:
+          path: metadata.name
+          value: cpd-install
+      - contains:
+          path: spec.params
+          content:
+            name: IBM_ENTITLEMENT_KEY
+            description: your ICR key to access cp.icr.io
+            type: string
+
+  # Test 4: Pipeline correctly applies when cpd_version satisfies semverCompare ~5.2.0
+  - it: should render pipeline for version 5.2.0
+    set:
+      cpd_version: "5.2.0"
+    asserts:
+      - isKind:
+          of: Pipeline
+      - equal:
+          path: metadata.name
+          value: cpd-install
+
+  - it: should render pipeline for version 5.2.5
+    set:
+      cpd_version: "5.2.5"
+    asserts:
+      - isKind:
+          of: Pipeline
+      - equal:
+          path: metadata.name
+          value: cpd-install
+
+  - it: should not render pipeline for version 5.1.0
+    set:
+      cpd_version: "5.1.0"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render pipeline for version 5.3.0
+    set:
+      cpd_version: "5.3.0"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # Test 5: Pipeline tasks handle retry and timeout values as expected
+  - it: should set correct retry values for kubelet tasks
+    set:
+      cpd_version: "5.2.0"
+    asserts:
+      - contains:
+          path: spec.tasks
+          content:
+            name: kubelet-pod-pids-limit
+            retries: 10
+      - contains:
+          path: spec.tasks
+          content:
+            name: kubelet-db2-limited-priv
+            retries: 10
+
+  - it: should set correct timeout values for long-running tasks
+    set:
+      cpd_version: "5.2.0"
+    asserts:
+      - contains:
+          path: spec.tasks
+          content:
+            name: apply-cluster-components
+            timeout: 1h0m0s
+      - contains:
+          path: spec.tasks
+          content:
+            name: components-apply-cr
+            timeout: 4h0m0s
+
+  # Additional test: Conditional tasks execution based on parameters
+  - it: should include conditional when clause for kubelet-pod-pids-limit task
+    set:
+      cpd_version: "5.2.0"
+    asserts:
+      - contains:
+          path: spec.tasks
+          content:
+            name: kubelet-pod-pids-limit
+            when:
+              - input: $(params.APPLY_MACHINECONFIG)
+                operator: in
+                values:
+                  - "true"
+                  - "yes"
+
+  - it: should include conditional when clause for kubelet-db2-limited-priv task
+    set:
+      cpd_version: "5.2.0"
+    asserts:
+      - contains:
+          path: spec.tasks
+          content:
+            name: kubelet-db2-limited-priv
+            when:
+              - input: $(params.DB2_LIMITED_PRIV)
+                operator: in
+                values:
+                  - "true"
+                  - "yes"
+
+  - it: should include conditional when clause for apply-scheduler task
+    set:
+      cpd_version: "5.2.0"
+    asserts:
+      - contains:
+          path: spec.tasks
+          content:
+            name: apply-scheduler
+            when:
+              - input: $(params.SCHEDULER)
+                operator: in
+                values:
+                  - "true"
+                  - "yes"
+
+  - it: should include conditional when clause for no-gpu-patch task
+    set:
+      cpd_version: "5.2.0"
+    asserts:
+      - contains:
+          path: spec.tasks
+          content:
+            name: no-gpu-patch
+            when:
+              - input: $(params.NO_GPU)
+                operator: in
+                values:
+                  - "true"
+                  - "yes"
+
+  - it: should include conditional when clause for set-db2-limited-privs task
+    set:
+      cpd_version: "5.2.0"
+    asserts:
+      - contains:
+          path: spec.tasks
+          content:
+            name: set-db2-limited-privs
+            when:
+              - input: $(params.DB2_LIMITED_PRIV)
+                operator: in
+                values:
+                  - "true"
+                  - "yes"
+
+  # Test proxy-related defaults
+  - it: should set CASE_FROM_OCI default to false when proxy is enabled
+    set:
+      cpd_version: "5.2.0"
+      proxy.enabled: true
+    asserts:
+      - contains:
+          path: spec.params
+          content:
+            name: CASE_FROM_OCI
+            description: Set [true] to download CASE as OCI, [false] to get CASE from Github.
+            type: string
+            default: "false"
+
+  - it: should set CASE_FROM_OCI default to true when proxy is disabled
+    set:
+      cpd_version: "5.2.0"
+      proxy.enabled: false
+    asserts:
+      - contains:
+          path: spec.params
+          content:
+            name: CASE_FROM_OCI
+            description: Set [true] to download CASE as OCI, [false] to get CASE from Github.
+            type: string
+            default: "true"
+
+  # Test architecture-specific image tags
+  - it: should append architecture suffix to image tags for non-x86 architecture
+    set:
+      cpd_version: "5.2.0"
+      arch: "ppc64le"
+      default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v3"
+    asserts:
+      - contains:
+          path: spec.tasks
+          content:
+            name: update-pull-secret
+            params:
+              - name: OLM_UTILS_IMAGE
+                value: "$(params.OLM_UTILS_IMAGE):$(params.VERSION).ppc64le"
+
+  - it: should not append architecture suffix for x86 architecture
+    set:
+      cpd_version: "5.2.0"
+      arch: "x86"
+      default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v3"
+    asserts:
+      - contains:
+          path: spec.tasks
+          content:
+            name: update-pull-secret
+            params:
+              - name: OLM_UTILS_IMAGE
+                value: "$(params.OLM_UTILS_IMAGE):$(params.VERSION)"
