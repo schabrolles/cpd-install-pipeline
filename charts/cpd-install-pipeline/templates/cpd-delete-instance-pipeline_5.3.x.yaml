@@ -42,6 +42,17 @@ spec:
       description: cloud-pak ibm-scheduler namespace
       name: PROJECT_SCHEDULING_SERVICE
       type: string
+    - default: 'false'
+      description: 'Remove knative sereventing service (default: [false])'
+      name: REMOVE_KNATIVE_EVENTING
+      type: string
+      {{- if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{- end }}
+    - default: 'ibm-knative-events'
+      description: cloud-pak ibm-knative-events namespace
+      name: PROJECT_KNATIVE_EVENTING
+      type: string
     - name: DELETE_NAMESPACES
       default: 'true'
       type: string
@@ -86,8 +97,9 @@ spec:
         value: |-
           echo
           echo "> force cleaning finalizers from remaining CPD resources in $(params.PROJECT_CPD_INST_OPERANDS) namespace"
-          CPD_IBM_RESOURCES=$(oc api-resources -o name | awk '/cpd.ibm.com/ { CPD_IBM=CPD_IBM","$1 } END {gsub("^,","",CPD_IBM) ; print CPD_IBM}')
-          for resource in $(oc get client.oidc.security.ibm.com,$CPD_IBM_RESOURCES -n $(params.PROJECT_CPD_INST_OPERANDS) -o name);do 
+          RESOURCES_TO_REMOVE=$(oc api-resources -o name | awk '/cpd.ibm.com/ || /datagovernor.ibm.com/ || /security.ibm.com/ { TOREMOVE=TOREMOVE","$1 } END {gsub("^,","",TOREMOVE) ; print TOREMOVE}')
+
+          for resource in $(oc get $RESOURCES_TO_REMOVE -n $(params.PROJECT_CPD_INST_OPERANDS) -o name);do 
            oc patch -n $(params.PROJECT_CPD_INST_OPERANDS) $resource --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
           done
           echo
@@ -106,7 +118,7 @@ spec:
             sleep 5
           done
       runAfter:
-        - delete-cluster-scoped-resources
+        - remove-knative-ibm-events
       taskRef:
         kind: Task
         name: olm-utils
@@ -190,6 +202,28 @@ spec:
         name: olm-utils
       when:
       - input: $(params.REMOVE_SCHEDULING_SERVICE)
+        operator: in
+        values:
+        - 'true'  
+        - 'True'
+        - 'TRUE'
+    - name: remove-knative-ibm-events
+      params:
+      - name: OLM_UTILS_IMAGE
+        value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
+      - name: OLM_CMD
+        value: |-
+          echo "remove-knative-eventing --events_operator_ns=$(params.PROJECT_KNATIVE_EVENTING) --delete_kafka_resources=true --delete_openshift_serverless=true --delete_knative_crds=true --delete_provided_ibm_events_ns=$(params.DELETE_NAMESPACES) -y"
+          remove-knative-eventing --events_operator_ns=$(params.PROJECT_KNATIVE_EVENTING) --delete_kafka_resources=true --delete_openshift_serverless=true --delete_knative_crds=true --delete_provided_ibm_events_ns=$(params.DELETE_NAMESPACES) -y
+      - name: CP-INSTALL-OPTIONS
+        value: "{{ .Release.Name }}-install-option"
+      runAfter:
+      - delete-cluster-scoped-resources
+      taskRef:
+        kind: Task
+        name: olm-utils
+      when:
+      - input: $(params.REMOVE_KNATIVE_EVENTING)
         operator: in
         values:
         - 'true'
