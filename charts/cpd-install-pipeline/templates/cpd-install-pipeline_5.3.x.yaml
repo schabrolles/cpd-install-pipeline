@@ -164,7 +164,7 @@ spec:
         type: string
       - name: cert-manager
         type: string
-      - name: knative
+      - name: ibm-events-operator
         type: string
       - name: cert-manager
         type: string
@@ -255,7 +255,7 @@ spec:
             fi
             echo -n "true" > $(results.mcg.path)
             echo " => Setup MultiCloud Gateway"
-            echo -n "true" > $(results.knative.path)
+            echo -n "true" > $(results.ibm-events-operator.path)
             echo " => Setup Knative Eventing"
           fi
 
@@ -322,7 +322,7 @@ spec:
             echo " => Setup OpenShift AI"
             echo -n "true" > $(results.mcg.path)
             echo " => Setup MultiCloud Gateway"
-            echo -n "true" > $(results.knative.path)
+            echo -n "true" > $(results.ibm-events-operator.path)
             echo " => Setup Knative Eventing"
           fi
 
@@ -995,7 +995,7 @@ spec:
       operator: in
       values:
       - 'true'
-  - name: knative-eventing
+  - name: knative-ibm-events-operator
     retries: 3
     params:
     - name: OLM_UTILS_IMAGE
@@ -1058,7 +1058,7 @@ spec:
       kind: Task
       name: olm-utils
     when:
-    - input: $(tasks.check-prereq.results.knative)
+    - input: $(tasks.check-prereq.results.ibm-events-operator)
       operator: in
       values:
       - 'true'
@@ -1378,7 +1378,7 @@ spec:
     - set-db2-limited-privs
     - image-pull-secret
     - apply-entitlement
-    - knative-eventing
+    - knative-ibm-events-operator
     timeout: "8h0m0s"
     taskRef:
       kind: Task
