@@ -9,7 +9,7 @@ arch: "x86"
 default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v4"
 
 # Cloudpak for Data / OLM version to set as default in pipelines
-cpd_version: "5.3.0"
+cpd_version: "5.3.1"
 
 # Cloud pak for Data mode to set as default in pipelines: cpd-enterprise, watsonx
 default_cpd_install: "watsonx"
@@ -28,6 +28,7 @@ proxy:
 # Private registry docker secret for disconnected (airgap) installation
 airgap:
   enabled: false
+  image_pull_prefix: "icr.io"
   private_registry_secret: "private-registry-secret"
 
 tektonPatch:

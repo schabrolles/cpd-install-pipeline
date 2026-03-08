@@ -19,7 +19,7 @@ spec:
     default: {{ .Release.Name }}-install-option
   - default: {{ .Values.airgap.private_registry_secret }}
     description: secret which contains credential for private registry
-    name: AIRGAP-SECRET
+    name: PRIVATE_REGISTRY_SECRET
     type: string
   {{ if .Values.proxy.enabled }}
   stepTemplate:
@@ -68,6 +68,6 @@ spec:
     {{ if .Values.airgap.enabled }}
     - name: "airgap-secret"
       secret:
-        secretName: $(params.AIRGAP-SECRET)
+        secretName: $(params.PRIVATE_REGISTRY_SECRET)
     {{ end  }}
 {{ end }}

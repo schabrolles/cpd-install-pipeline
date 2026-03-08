@@ -1,0 +1,48 @@
+---
+# ............................................................................
+# watsonx.ai parameters
+# ............................................................................
+non_olm:
+  watsonxAi:
+    liteInstall: false
+---
+# ............................................................................
+# watsonx Orchestrate parameters
+# ............................................................................
+non_olm:
+  watsonxOrchestrate:
+    # choose between, agentic, agentic_assistant
+    installMode: "agentic_assistant"
+    watsonxAI:
+      watsonxaiifm: true
+      syomModels: []
+      ootbModels: []
+---
+# ............................................................................
+# watsonx.governance parameters
+# ............................................................................
+non_olm:
+  watsonxGovernance:
+    # installType: all,mm or rcf
+    installType: all
+    enableFactsheet: true
+    enableOpenpages: true
+    enableOpenscale: true
+
+  #   openpagesInstanceCR: "op-wxgov-instance"
+  #   openPages:
+  #     databaseType: internal
+  #     database: Db2
+  #     dbSecretName: <secret-name>
+
+  #override_components_meta:
+  #  watsonx_governance:
+  #    status_max_retries: 240
+---
+# ............................................................................
+# watsonx.data parameters
+# ............................................................................
+non_olm:
+  watsonxData:
+    enable_lite_milvus: false
+    scaleConfig: small

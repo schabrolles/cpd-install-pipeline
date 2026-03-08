@@ -1,0 +1,198 @@
+{{- if semverCompare "~5.3.0" .Values.cpd_version }}
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: cpd-delete-instance
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+    - default: {{ .Values.default_olm_utils_image }}
+      description: olm-utils images
+      name: OLM_UTILS_IMAGE
+      type: string
+    - default: {{ .Values.cpd_version }}
+      description: cloud-pak for data version
+      name: VERSION
+      type: string
+    - description: cloud-pak operand namspace
+      name: PROJECT_CPD_INST_OPERANDS
+      type: string
+    - description: cloud-pak operators namspace
+      name: PROJECT_CPD_INST_OPERATORS
+      type: string
+    - default: 'false'
+      description: 'Remove ibm-license service (default: [false])'
+      name: REMOVE_LICENSE_SERVICE
+      type: string
+      {{- if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{- end }}
+    - default: 'ibm-licensing'
+      description: cloud-pak ibm-licensing namespace
+      name: PROJECT_LICENSE_SERVICE
+      type: string
+    - default: 'false'
+      description: 'Remove ibm-scheduler service (default: [false])'
+      name: REMOVE_SCHEDULING_SERVICE
+      type: string
+      {{- if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{- end }}
+    - default: 'ibm-scheduler'
+      description: cloud-pak ibm-scheduler namespace
+      name: PROJECT_SCHEDULING_SERVICE
+      type: string
+    - name: DELETE_NAMESPACES
+      default: 'true'
+      type: string
+      description: 'Delete namespaces (default: [true])'
+      {{- if .Values.tektonPatch.activateEnum }}
+      enum: ["true", "false"]
+      {{- end }}
+  tasks:
+    - name: uninstall-components
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
+        - name: OLM_CMD
+          value: |-
+            echo 
+            echo "uninstall-components-cr COMPONENTS=all"
+            uninstall-components --instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) --delete_all_components=true --include_dependency=true
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 3h0m0s
+    - name: delete-cluster-scoped-resources
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
+        - name: CP-INSTALL-OPTIONS
+          value: "{{ .Release.Name }}-install-option"
+        - name: OLM_CMD
+          value: |-
+            delete-cluster-scoped-resources --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) --delete_all_components=true
+      runAfter:
+        - uninstall-components
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 1h30m0s
+    - name: remove-namespaces
+      params:
+      - name: OLM_UTILS_IMAGE
+        value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
+      - name: OLM_CMD
+        value: |-
+          echo
+          echo "> force cleaning finalizers from remaining CPD resources in $(params.PROJECT_CPD_INST_OPERANDS) namespace"
+          CPD_IBM_RESOURCES=$(oc api-resources -o name | awk '/cpd.ibm.com/ { CPD_IBM=CPD_IBM","$1 } END {gsub("^,","",CPD_IBM) ; print CPD_IBM}')
+          for resource in $(oc get client.oidc.security.ibm.com,$CPD_IBM_RESOURCES -n $(params.PROJECT_CPD_INST_OPERANDS) -o name);do 
+           oc patch -n $(params.PROJECT_CPD_INST_OPERANDS) $resource --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
+          done
+          echo
+          echo "Delete $(params.PROJECT_CPD_INST_OPERANDS)"
+          oc delete project $(params.PROJECT_CPD_INST_OPERANDS) --ignore-not-found --wait=false
+          while $(oc get ns $(params.PROJECT_CPD_INST_OPERANDS) > /dev/null 2>&1);do 
+            echo "wait for NS $(params.PROJECT_CPD_INST_OPERANDS) deletion" 
+            sleep 5
+          done
+          
+          echo
+          echo "Delete $(params.PROJECT_CPD_INST_OPERATORS)"
+          oc delete project $(params.PROJECT_CPD_INST_OPERATORS)
+          while $(oc get ns $(params.PROJECT_CPD_INST_OPERATORS) > /dev/null 2>&1);do 
+            echo "wait for NS $(params.PROJECT_CPD_INST_OPERATORS) deletion"
+            sleep 5
+          done
+      runAfter:
+        - delete-cluster-scoped-resources
+      taskRef:
+        kind: Task
+        name: olm-utils
+      timeout: 30m0s
+      when: 
+        - input: "$(params.DELETE_NAMESPACES)"
+          operator: in
+          values: ["true", "True", "TRUE", "yes"]
+    - name: remove-ibm-licensing
+      params:
+        - name: OLM_UTILS_IMAGE
+          value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
+        - name: OLM_CMD
+          value: |-
+            IBM_LICENSING=$(echo $(params.PROJECT_LICENSE_SERVICE) | tr -d '[:space:]')
+            oc get project ${IBM_LICENSING} > /dev/null 2>&1
+            if [ $? -eq 0 ];then
+                echo "Deleting everything in the ${IBM_LICENSING} project"
+                oc delete ibmlicensing  --all --ignore-not-found
+                oc delete sub -n ${IBM_LICENSING} --all --ignore-not-found
+                oc delete csv -n ${IBM_LICENSING} --all --ignore-not-found
+
+                if $(params.DELETE_NAMESPACES); then
+                  echo "Deleting ${IBM_LICENSING} project"
+                  oc delete ns ${IBM_LICENSING} --ignore-not-found --wait=false
+                  while $(oc get ns ${IBM_LICENSING} > /dev/null 2>&1);do
+                      echo "wait for NS ${IBM_LICENSING} deletion"
+                      sleep 5
+                  done
+                fi
+            else
+                echo "Project ${IBM_LICENSING} does not exist, skipping"
+            fi
+        - name: CP-INSTALL-OPTIONS
+          value: "{{ .Release.Name }}-install-option"
+      runAfter:
+        - delete-cluster-scoped-resources
+      taskRef:
+        kind: Task
+        name: olm-utils
+      when:
+        - input: $(params.REMOVE_LICENSE_SERVICE)
+          operator: in
+          values:
+            - 'true'
+            - 'True'
+            - 'TRUE'
+    - name: remove-ibm-scheduler
+      params:
+      - name: OLM_UTILS_IMAGE
+        value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
+      - name: OLM_CMD
+        value: |-
+          PROJECT_SCHEDULING_SERVICE=$( echo $(params.PROJECT_SCHEDULING_SERVICE) | tr -d '[:space:]')
+          oc get project ${PROJECT_SCHEDULING_SERVICE} > /dev/null 2>&1
+          if [ $? -eq 0 ];then
+              oc delete Scheduling ibm-cpd-scheduler --namespace $(params.PROJECT_SCHEDULING_SERVICE) --ignore-not-found
+              
+              oc delete clusterrole -l=icpdsupport/addOnId=scheduling --ignore-not-found 
+              oc delete clusterrolebinding -l=icpdsupport/addOnId=scheduling --ignore-not-found
+              ## Added by schabrolles
+              oc delete crd scheduling.scheduler.spectrumcomputing.ibm.com --ignore-not-found
+              
+              if $(params.DELETE_NAMESPACES); then
+                echo "Deleting ${PROJECT_SCHEDULING_SERVICE} project"
+                oc delete ns ${PROJECT_SCHEDULING_SERVICE} --ignore-not-found --wait=false
+                while $(oc get ns ${PROJECT_SCHEDULING_SERVICE} > /dev/null 2>&1);do
+                    echo "wait for NS ${PROJECT_SCHEDULING_SERVICE} deletion"
+                    sleep 5
+                done
+              fi
+          else
+              echo "Project ${PROJECT_SCHEDULING_SERVICE} does not exist, skipping"
+          fi
+      - name: CP-INSTALL-OPTIONS
+        value: "{{ .Release.Name }}-install-option"
+      runAfter:
+      - delete-cluster-scoped-resources
+      taskRef:
+        kind: Task
+        name: olm-utils
+      when:
+      - input: $(params.REMOVE_SCHEDULING_SERVICE)
+        operator: in
+        values:
+        - 'true'
+        - 'True'
+        - 'TRUE'
+{{ end }}

@@ -1,3 +1,4 @@
+{{- if semverCompare "<5.3.0" .Values.cpd_version }}
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
@@ -164,6 +165,8 @@ spec:
               oc delete clusterrole -l=icpdsupport/addOnId=scheduling --ignore-not-found 
               oc delete clusterrolebinding -l=icpdsupport/addOnId=scheduling --ignore-not-found
               
+              echo "Deleting ${PROJECT_SCHEDULING_SERVICE} project"
+              oc delete ns ${PROJECT_SCHEDULING_SERVICE} --ignore-not-found --wait=false
               while $(oc get ns ${PROJECT_SCHEDULING_SERVICE} > /dev/null 2>&1);do
                   echo "wait for NS ${PROJECT_SCHEDULING_SERVICE} deletion"
                   sleep 5
@@ -185,3 +188,4 @@ spec:
         - 'false'
         - 'False'
         - 'No'
+{{ end }}

@@ -2,20 +2,28 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  {{ if .Values.airgap.enabled }}
+  {{- if .Values.airgap.enabled }}
   name: cpd-install-airgap
-  {{ else }}
+  {{- else }}
   name: cpd-install
-  {{ end }}
+  {{- end }}
   namespace: {{ .Release.Namespace }}
 spec:
   params:
-    {{ if .Values.airgap.enabled }}
+    {{- if .Values.airgap.enabled }}
+    - default: {{ .Values.airgap.private_registry }}
+      description: location of your private container registry (artifactory.mop.ibm)
+      name: PRIVATE_REGISTRY_LOCATION
+      type: string
     - default: {{ .Values.airgap.private_registry_secret }}
-      description: registry-secret containing your private registry credential  
+      description: registry-secret containing your private registry credential
       name: PRIVATE_REGISTRY_SECRET
       type: string
-    {{ end }}
+    {{- end }}
+    - default: "icr.io"
+      description: The location from which your cluster pulls images.
+      name: IMAGE_PULL_PREFIX
+      type: "string"
     - default: {{ .Values.default_olm_utils_image }}
       description: olm-utils images
       name: OLM_UTILS_IMAGE
@@ -24,11 +32,11 @@ spec:
       description: cloud-pak for data version
       name: VERSION
       type: string
-    {{ if eq .Values.default_cpd_install "watsonx" }}
+    {{- if eq .Values.default_cpd_install "watsonx" }}
     - default: watsonx_orchestrate
-    {{ else }}
+    {{- else }}
     - default: wml,ws
-    {{ end }}
+    {{- end }}
       description: "cloud-pak components to install (wml,watsonx_ai,watsonx_orchestrate,watsonx_data,watsonx_governance,...)https://www.ibm.com/docs/en/software-hub/5.3.x?topic=information-determining-which-components-install"
       name: COMPONENTS
       type: string
@@ -40,19 +48,19 @@ spec:
       description: Install needed prerequisite (like OpenshiftAI, knative, mcg ...) https://www.ibm.com/docs/en/software-hub/5.3.x?topic=cluster-installing-prerequisite-software
       name: INSTALL_PREREQUISITE
       type: string
-    {{ if eq .Values.default_cpd_install "watsonx" }}
+    {{- if eq .Values.default_cpd_install "watsonx" }}
     - default: watsonx
-    {{ else }}
+    {{- else }}
     - default: cpd
-    {{ end }}
+    {{- end }}
       description: cloud-pak operand namspace
       name: PROJECT_CPD_INST_OPERANDS
       type: string
-    {{ if eq .Values.default_cpd_install "watsonx" }}
+    {{- if eq .Values.default_cpd_install "watsonx" }}
     - default: watsonx-operators
-    {{ else }}
+    {{- else }}
     - default: cpd-operators
-    {{ end }}
+    {{- end }}
       description: cloud-pak operators namspace
       name: PROJECT_CPD_INST_OPERATORS
       type: string
@@ -64,18 +72,18 @@ spec:
       description: Set [true] to enable ibm-scheduler
       name: SCHEDULER
       type: string
-      {{ if .Values.tektonPatch.activateEnum }}
+      {{- if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
-      {{ end }}
+      {{- end }}
     - default: ibm-scheduler
       description: cloud-pak scheduler namespace
       name: PROJECT_SCHEDULING_SERVICE
       type: string
-    {{ if not .Values.airgap.enabled }}
+    {{- if not .Values.airgap.enabled }}
     - name: IBM_ENTITLEMENT_KEY
       description: your ICR key to access cp.icr.io
       type: string
-    {{ end }}
+    {{- end }}
     - default: {{ .Values.storageClass.block }}
       description: StorageClass for Block
       name: STG_CLASS_BLOCK
@@ -84,10 +92,6 @@ spec:
       description: StorageClass for Files
       name: STG_CLASS_FILE
       type: string
-    - name: STORAGE_TESTS
-      description: "run test performance validation against Provided StorageClass"
-      type: string
-      default: "false"
     - name: GPU_OPERATOR_INSTALL
       description: "Install GPU Operator with requirement like NFD operator"
       type: string
@@ -96,57 +100,53 @@ spec:
       description: "GPU Operator channel version"
       type: string
       default: "v25.3"
-    {{ if eq .Values.default_cpd_install "watsonx" }}
+    {{- if eq .Values.default_cpd_install "watsonx" }}
     - default: "watsonx-ai,watsonx-orchestrate,watsonx-data"
       description: "Entitlement: watsonx-ai,watsonx-orchestrate,watsonx-data,watsonx-data,watsonx-gov-mm,watsonx-gov-rc...https://www.ibm.com/docs/en/software-hub/5.3.x?topic=entitlements-applying-your-without-node-pinning"
-    {{ else }}
+    {{- else }}
     - default: cpd-enterprise
       description: "Entitlement: cpd-enterprise,cpd-standard...https://www.ibm.com/docs/en/software-hub/5.3.x?topic=entitlements-applying-your-without-node-pinning"
-    {{ end }}
+    {{- end }}
       name: ENTITLEMENT
       type: string
-      {{ if .Values.tektonPatch.activateEnum }}
-      enum: ["cpd-enterprise", "cpd-standard", "watsonx-ai", "watsonx-data", "watsonx-gov-model-management", "watsonx-gov-risk-compliance"]
-      {{ end }}
+      {{- if .Values.tektonPatch.activateEnum }}
+      enum: ["cpd-enterprise", "cpd-standard", "watsonx-ai", "watsonx-data", "watsonx-gov-rc", "watsonx-gov-mm"]
+      {{- end }}
     - name: ACCEPT_LICENCE
       description: 'Please Accept LICENCE (set [true])'
       type: string
-      {{ if .Values.tektonPatch.activateEnum }}
+      {{- if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
-      {{ end }} 
+      {{- end }} 
     - default: "true"
       description: 'Set [false] for non-prod environment'
       name: PRODUCTION
       type: string
-      {{ if .Values.tektonPatch.activateEnum }}
+      {{- if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
-      {{ end }} 
+      {{- end }} 
     - name: APPLY_MACHINECONFIG
       description: Apply KubeletConfig for cloud-pak-for-data (PidsLimit)
       type: string
       default: "false"
-      {{ if .Values.tektonPatch.activateEnum }}
+      {{- if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
-      {{ end }} 
+      {{- end }} 
     - name: DB2_LIMITED_PRIV
       description: Run DB2 pod in Limited Privilege mode
       type: string
       default: "false"
-      {{ if .Values.tektonPatch.activateEnum }}
+      {{- if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
-      {{ end }}
+      {{- end }}
     - name: CASE_FROM_OCI
       description: Set [true] to download CASE as OCI, [false] to get CASE from Github.
       type: string
       {{ if .Values.proxy.enabled }}default: "false"{{ else }}default: "true"{{ end }}
-      {{ if .Values.tektonPatch.activateEnum }}
+      {{- if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
-      {{ end }}
-    - default: "icr.io"
-      description: The location from which your cluster pulls images.
-      name: IMAGE_PULL_PREFIX
-      type: "string"
-    - default: "cp.icr.io/cpopen"
+      {{- end }}
+    - {{ if .Values.airgap.enabled }}default: {{ .Values.airgap.private_registry }}/cp.icr.io/cpopen {{ else }}default: "cp.icr.io/cpopen"{{ end }}
       description: only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages
       name: OCI_LOCATION
       type: "string"
@@ -247,7 +247,7 @@ spec:
             echo "watsonx_orchestrate requested"
 
             # Verify if watsonx_ai is requested in watsonx_orchestrate install-options
-            if [ $(yq '.non_olm.watsonxOrchestrate.watsonxAI.watsonxaiifm' /tmp/install-options/install-options.yml) = "true" ]; then
+            if [ $(yq 'select(.non_olm.watsonxOrchestrate != null) | .non_olm.watsonxOrchestrate.watsonxAI.watsonxaiifm' /tmp/install-options/install-options.yml) = "true" ]; then
               echo -n "true" > $(results.gpu-operator.path)
               echo " => Setup GPU Operator"
               echo -n "true" > $(results.openshift-ai.path)
@@ -358,13 +358,134 @@ spec:
         {{ if .Values.airgap.enabled }}
         - name: "airgap-secret"
           secret:
-            secretName: $(params.AIRGAP-SECRET)
+            secretName: "$(params.PRIVATE_REGISTRY_SECRET)"
         {{ end  }}
+  - name: update-global-pull-secret
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        {{- if .Values.airgap.enabled }}
+        mkdir -p pull-secret && \
+        oc extract secret/pull-secret -n openshift-config --to=pull-secret && \
+        mkdir -p {{ .Values.airgap.private_registry_secret }} && \
+        oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to={{ .Values.airgap.private_registry_secret }} && \
+        jq -s '.[0] * .[1]' pull-secret/.dockerconfigjson {{ .Values.airgap.private_registry_secret }}/.dockerconfigjson > .dockerconfigjson && \
+        oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson
+        {{- else }}
+        add-icr-cred-to-global-pull-secret --entitled_registry_key=$(params.IBM_ENTITLEMENT_KEY)
+        {{- end }}
+
+        if [[ $(oc get mcp -o name | wc -l) -eq 0 ]]; then
+          platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
+          echo
+          echo "non-MCP cluster detected, activating workaround"
+          case $platformSpec in 
+            KubeVirt )
+              echo "KubeVirt detected, activating workaround"
+              echo
+              dockerconfigfile=/var/lib/kubelet/config.json
+            ;;
+            IBMCloud )
+              echo "ROKS detected, activating workaround"
+              echo
+              dockerconfigfile=/.docker/config.json
+            ;;
+            *)
+              echo "Unknown platform detected, activating workaround, † cross your fingers †"
+              echo
+              dockerconfigfile=/var/lib/kubelet/config.json
+            ;;
+          esac
+          oc debug $(oc get node -o name | head -n1) -- chroot /host cat $dockerconfigfile > /tmp/config.json
+
+          {{ if not .Values.airgap.enabled }}
+          cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
+          {{ else }}
+          oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to=/tmp
+          jq -s '.[0] * .[1]' /tmp/config.json /tmp/.dockerconfigjson > /tmp/config.json.new
+          {{ end }}
+
+          sleep 1
+          for n in `oc get node -o name`; do 
+            oc adm copy-to-node --copy=/tmp/config.json.new=$dockerconfigfile $n
+          done
+        fi
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: kubelet-pod-pids-limit
+    retries: 10
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+          apply-pid-limit
+        else
+          echo "No MachineConfig Found"
+        fi
+    taskRef:
+      kind: Task
+      name: olm-utils
     when:
-    - input: $(params.INSTALL_PREREQUISITE)
+    - input: $(params.APPLY_MACHINECONFIG)
       operator: in
       values:
-      - 'true'
+      - "true"
+      - "yes"
+  - name: kubelet-db2-limited-priv
+    retries: 10
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+          apply-db2-kubelet --self_managed=true
+        else
+          echo "No MachineConfig Found ..."
+          platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
+
+          case $platformSpec in 
+            IBMCloud)
+              echo "\nIBMCloud ROKS detected"
+              apply-db2-kubelet --openshift_type=roks
+
+              echo "* [Applying kubelet config without reboot]"
+              echo "* Fetching cp4d-kubelet.conf"
+              oc extract cm/cp4d-kubelet-conf -n kube-system --to=/tmp
+
+              echo "* Deploying new kebelet"
+              for n in `oc get node -o name`; do 
+                oc adm copy-to-node --copy=/tmp/cp4d-kubelet.conf=/etc/kubernetes/kubelet.conf $n
+              done
+
+              echo "* Restarting kubelet"
+              oc adm restart-kubelet nodes --all --directive=RemoveKubeletKubeconfig
+            ;;
+            *)
+              echo "Can't detect CloudProvider. Don't know how to apply configuration"
+            ;;
+          esac
+        fi
+    taskRef:
+      kind: Task
+      name: olm-utils
+    when:
+    - input: $(params.DB2_LIMITED_PRIV)
+      operator: in
+      values:
+      - "true"
+      - "yes"
   - name: nfd-operator
     retries: 3
     params:
@@ -373,10 +494,14 @@ spec:
     - name: OLM_CMD
       value: |
         echo
-        echo "> Deploy Node Feature Discovery Operator"
-        cat <<EOF |oc apply -f -
+        echo "> Check if Node Feature Discovery Operator is already installed"
+        if oc get subscriptions.operators.coreos.com nfd -n openshift-nfd &>/dev/null; then
+          echo "> NFD operator already installed, skipping operator installation"
+        else
+          echo "> Deploy Node Feature Discovery Operator"
+          cat <<EOF |oc apply -f -
         apiVersion: v1
-        kind: Namespace 
+        kind: Namespace
         metadata:
           name: openshift-nfd
         ---
@@ -403,22 +528,27 @@ spec:
           sourceNamespace: openshift-marketplace
         EOF
 
-        ###
-        echo
-        echo "> Wait for CSV nfd-operator to be Available ..."
-        until oc get csv -n openshift-nfd 2>/dev/null | grep -q nfd; do
-          echo -n "."
-          sleep 2
-        done
-        echo
-        echo "> Wait for InstallPan to Complete"
-        oc wait --for jsonpath='{.status.phase}'="Complete" installplans.operators.coreos.com --all -n openshift-nfd
-        echo "> Wait for Operator Pods to be Ready"
-        oc wait --for=condition=Ready=true pod --all -n openshift-nfd
+          ###
+          echo
+          echo "> Wait for CSV nfd-operator to be Available ..."
+          until oc get csv -n openshift-nfd 2>/dev/null | grep -q nfd; do
+            echo -n "."
+            sleep 2
+          done
+          echo
+          echo "> Wait for InstallPlan to Complete"
+          oc wait --for jsonpath='{.status.phase}'="Complete" installplans.operators.coreos.com --all -n openshift-nfd
+          echo "> Wait for Operator Pods to be Ready"
+          oc wait --for=condition=Ready=true pod --all -n openshift-nfd
+        fi
 
         echo
-        echo "Create nfd-instance"
-        cat <<EOF |oc apply -f -
+        echo "> Check if NodeFeatureDiscovery instance already exists"
+        if oc get nodefeaturediscovery nfd-instance -n openshift-nfd &>/dev/null; then
+          echo "> NodeFeatureDiscovery nfd-instance already exists, skipping creation"
+        else
+          echo "> Create nfd-instance"
+          cat <<EOF |oc apply -f -
         apiVersion: nfd.openshift.io/v1
         kind: NodeFeatureDiscovery
         metadata:
@@ -445,12 +575,16 @@ spec:
                   deviceLabelFields:
                     - "vendor"
         EOF
+        fi
     - name: CP-INSTALL-OPTIONS
       value: cpd-install-pipeline-install-option
-    - name: AIRGAP-SECRET
+    - name: PRIVATE_REGISTRY_SECRET
       value: private-registry-secret
     runAfter:
     - check-prereq
+    - update-global-pull-secret
+    - kubelet-pod-pids-limit
+    - kubelet-db2-limited-priv
     taskRef:
       kind: Task
       name: olm-utils
@@ -466,18 +600,21 @@ spec:
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: OLM_CMD
       value: |
-        
         CHANNEL_VERSION=$(params.GPU_OPERATOR_CHANNEL)
-        
+
         if [ -z $CHANNEL_VERSION ]; then
           echo "CHANNEL_VERSION variable for NVIDIA GPU Operator not set"
         fi
 
         echo
-        echo "> Deploy NVIDIA GPU Operator"
-        cat <<EOF |oc apply -f -
+        echo "> Check if NVIDIA GPU Operator is already installed"
+        if oc get subscriptions.operators.coreos.com gpu-operator-certified -n nvidia-gpu-operator &>/dev/null; then
+          echo "> NVIDIA GPU Operator already installed, skipping operator installation"
+        else
+          echo "> Deploy NVIDIA GPU Operator"
+          cat <<EOF |oc apply -f -
         apiVersion: v1
-        kind: Namespace 
+        kind: Namespace
         metadata:
           name: nvidia-gpu-operator
         ---
@@ -504,22 +641,27 @@ spec:
           sourceNamespace: openshift-marketplace
         EOF
 
-        ###
-        echo
-        echo "> Wait for CSV nvidia-gpu-operator to be Available ..."
-        until oc get csv -n nvidia-gpu-operator 2>/dev/null | grep -q gpu-operator-certified; do
-          echo -n "."
-          sleep 2
-        done
-        echo
-        echo "> Wait for InstallPan to Complete"
-        oc wait --for jsonpath='{.status.phase}'="Complete" installplans.operators.coreos.com --all -n nvidia-gpu-operator
-        echo "> Wait for Operator Pods to be Ready"
-        oc wait --for=condition=Ready=true pod --all -n nvidia-gpu-operator
+          ###
+          echo
+          echo "> Wait for CSV nvidia-gpu-operator to be Available ..."
+          until oc get csv -n nvidia-gpu-operator 2>/dev/null | grep -q gpu-operator-certified; do
+            echo -n "."
+            sleep 2
+          done
+          echo
+          echo "> Wait for InstallPlan to Complete"
+          oc wait --for jsonpath='{.status.phase}'="Complete" installplans.operators.coreos.com --all -n nvidia-gpu-operator
+          echo "> Wait for Operator Pods to be Ready"
+          oc wait --for=condition=Ready=true pod --all -n nvidia-gpu-operator
+        fi
 
         echo
-        echo "Create nfd-instance"
-        cat <<EOF |oc apply -f -
+        echo "> Check if ClusterPolicy already exists"
+        if oc get clusterpolicy gpu-cluster-policy &>/dev/null; then
+          echo "> ClusterPolicy gpu-cluster-policy already exists, skipping creation"
+        else
+          echo "> Create gpu-cluster-policy"
+          cat <<EOF |oc apply -f -
         apiVersion: nvidia.com/v1
         kind: ClusterPolicy
         metadata:
@@ -620,9 +762,10 @@ spec:
             enabled: true
             installDir: /usr/local/nvidia
         EOF
+        fi
     - name: CP-INSTALL-OPTIONS
       value: cpd-install-pipeline-install-option
-    - name: AIRGAP-SECRET
+    - name: PRIVATE_REGISTRY_SECRET
       value: private-registry-secret
     runAfter:
     - nfd-operator
@@ -648,10 +791,14 @@ spec:
         fi
 
         echo
-        echo "> Deploy Openshift AI Operator ($CHANNEL_VERSION)"
-        cat <<EOF |oc apply -f -
+        echo "> Check if OpenShift AI Operator is already installed"
+        if oc get subscriptions.operators.coreos.com rhods-operator -n redhat-ods-operator &>/dev/null; then
+          echo "> OpenShift AI operator already installed, skipping operator installation"
+        else
+          echo "> Deploy Openshift AI Operator ($CHANNEL_VERSION)"
+          cat <<EOF |oc apply -f -
         apiVersion: v1
-        kind: Namespace 
+        kind: Namespace
         metadata:
           name: redhat-ods-operator
         ---
@@ -676,20 +823,27 @@ spec:
                 - name: "DISABLE_DSC_CONFIG"
         EOF
 
+          ###
+          echo
+          echo "> Wait for CSV rhods-operator to be Available ..."
+          until oc get csv -n redhat-ods-operator 2>/dev/null | grep -q rhods-operator; do
+            echo -n "."
+            sleep 2
+          done
+          echo
+          echo "> Wait for InstallPlan to Complete"
+          oc wait --for jsonpath='{.status.phase}'="Complete" installplans.operators.coreos.com --all -n redhat-ods-operator
+          echo "> Wait for Operator Pods to be Ready"
+          oc wait --for=condition=Ready=true pod --all -n redhat-ods-operator
+        fi
+
         ###
         echo
-        echo "> Wait for CSV redhat-ods-operator to be Available ..."
-        until oc get csv -n redhat-ods-operator 2>/dev/null | grep -q rhods-operator; do
-          echo -n "."
-          sleep 2
-        done
-        echo
-        echo "> Wait for InstallPan to Complete"
-        oc wait --for jsonpath='{.status.phase}'="Complete" installplans.operators.coreos.com --all -n redhat-ods-operator
-        echo "> Wait for Operator Pods to be Ready"
-        oc wait --for=condition=Ready=true pod --all -n redhat-ods-operator
-
-        cat <<EOF |oc apply -f -
+        echo "> Check if DSCInitialization already exists"
+        if oc get dscinitialization default-dsci &>/dev/null; then
+          echo "> DSCInitialization default-dsci already exists, skipping creation"
+        else
+          cat <<EOF |oc apply -f -
         apiVersion: dscinitialization.opendatahub.io/v1
         kind: DSCInitialization
         metadata:
@@ -706,12 +860,18 @@ spec:
             customCABundle: ""
         EOF
 
+          echo
+          echo "> Wait for default-dsci to be Ready ..."
+          oc wait --for jsonpath='{.status.phase}'="Ready" dscinitialization default-dsci
+        fi
+
         ###
         echo
-        echo "> Wait for default-dsci to be Ready ..."
-        oc wait --for jsonpath='{.status.phase}'="Ready" dscinitialization default-dsci
-
-        cat <<EOF |oc apply -f -
+        echo "> Check if DataScienceCluster already exists"
+        if oc get datasciencecluster default-dsc &>/dev/null; then
+          echo "> DataScienceCluster default-dsc already exists, skipping creation"
+        else
+          cat <<EOF |oc apply -f -
         apiVersion: datasciencecluster.opendatahub.io/v1
         kind: DataScienceCluster
         metadata:
@@ -744,10 +904,10 @@ spec:
               managementState: Removed
         EOF
 
-        ###
-        echo
-        echo "> Wait for default-dsc to be Ready ..."
-        oc wait --for jsonpath='{.status.phase}'="Ready" datasciencecluster default-dsc --timeout 5m
+          echo
+          echo "> Wait for default-dsc to be Ready ..."
+          oc wait --for jsonpath='{.status.phase}'="Ready" datasciencecluster default-dsc --timeout 5m
+        fi
 
         ###
         echo
@@ -758,7 +918,7 @@ spec:
         oc get configmap inferenceservice-config -n redhat-ods-applications -o yaml | yq '.data.ingress |= (from_json | .domainTemplate = "example.com" | to_json | . style="literal")' | oc replace -f -
     - name: CP-INSTALL-OPTIONS
       value: cpd-install-pipeline-install-option
-    - name: AIRGAP-SECRET
+    - name: PRIVATE_REGISTRY_SECRET
       value: private-registry-secret
     runAfter:
     - gpu-operaor
@@ -785,12 +945,41 @@ spec:
         export NOOBAA_ACCOUNT_CREDENTIALS_SECRET=noobaa-admin
         export NOOBAA_ACCOUNT_CERTIFICATE_SECRET=noobaa-s3-serving-cert
 
-        setup-mcg --components=watson_assistant --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) --noobaa_account_secret=${NOOBAA_ACCOUNT_CREDENTIALS_SECRET} --noobaa_cert_secret=${NOOBAA_ACCOUNT_CERTIFICATE_SECRET}
+        COMPONENTS=$(params.COMPONENTS)
 
-        setup-mcg --components=watsonx_orchestrate --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) --noobaa_account_secret=${NOOBAA_ACCOUNT_CREDENTIALS_SECRET} --noobaa_cert_secret=${NOOBAA_ACCOUNT_CERTIFICATE_SECRET}
+        if [[ ",$COMPONENTS," == *",watson_discovery,"* ]]; then
+          echo
+          echo "watson_discovery detected"
+          setup-mcg --components=watson_discovery --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)} --noobaa_account_secret=${NOOBAA_ACCOUNT_CREDENTIALS_SECRET}
+          oc get secrets --namespace=$(params.PROJECT_CPD_INST_OPERANDS) noobaa-account-watson-discovery
+        fi
+
+        if [[ ",$COMPONENTS," == *",watson_speech,"* ]]; then
+          echo
+          echo "watson_speech detected"
+          setup-mcg --components=watson_speech --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) --noobaa_account_secret=${NOOBAA_ACCOUNT_CREDENTIALS_SECRET}  --noobaa_cert_secret=${NOOBAA_ACCOUNT_CERTIFICATE_SECRET}
+          oc get secrets --namespace=$(params.PROJECT_CPD_INST_OPERANDS) noobaa-account-watson-speech
+        fi
+
+        if [[ ",$COMPONENTS," == *",watson_assistant,"* ]]; then
+          echo
+          echo "watson_assistant detected"
+          setup-mcg --components=watson_assistant --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) --noobaa_account_secret=${NOOBAA_ACCOUNT_CREDENTIALS_SECRET} --noobaa_cert_secret=${NOOBAA_ACCOUNT_CERTIFICATE_SECRET}
+          oc get secrets --namespace=$(params.PROJECT_CPD_INST_OPERANDS) noobaa-account-watson-assistant noobaa-cert-watson-assistant noobaa-uri-watson-assistant
+        fi
+
+        if [[ ",$COMPONENTS," == *",watsonx_orchestrate,"* ]]; then
+         echo
+          echo "watsonx_orchestrate detected"
+          setup-mcg --components=watson_assistant --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) --noobaa_account_secret=${NOOBAA_ACCOUNT_CREDENTIALS_SECRET} --noobaa_cert_secret=${NOOBAA_ACCOUNT_CERTIFICATE_SECRET}
+          oc get secrets --namespace=$(params.PROJECT_CPD_INST_OPERANDS) noobaa-account-watson-assistant noobaa-cert-watson-assistant noobaa-uri-watson-assistant
+          echo
+          setup-mcg --components=watsonx_orchestrate --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) --noobaa_account_secret=${NOOBAA_ACCOUNT_CREDENTIALS_SECRET} --noobaa_cert_secret=${NOOBAA_ACCOUNT_CERTIFICATE_SECRET}
+          oc get secrets --namespace=$(params.PROJECT_CPD_INST_OPERANDS) noobaa-account-watsonx-orchestrate noobaa-cert-watsonx-orchestrate noobaa-uri-watsonx-orchestrate
+        fi
     - name: CP-INSTALL-OPTIONS
       value: cpd-install-pipeline-install-option
-    - name: AIRGAP-SECRET
+    - name: PRIVATE_REGISTRY_SECRET
       value: private-registry-secret
     runAfter:
     - authorize-inst-topology
@@ -813,15 +1002,58 @@ spec:
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: OLM_CMD
       value: |
-        echo "knative-setup"
-        echo
-        deploy-knative-eventing --release=$(params.VERSION) --block_storage_class=$(params.STG_CLASS_BLOCK)
+        # case-download --release=$(params.VERSION) --components=ibm_events_operator --from_oci=$(params.CASE_FROM_OCI) --oci_location=$(params.OCI_LOCATION)
+        # deploy-events-operator --release=5.3.1 --cluster_resources=true
+        echo 
+        echo "> Check if ibm-events-operator is already installed" 
+          if oc get kafkas.ibmevents.ibm.com wo-wa-data-governor-kafka -n $(params.PROJECT_CPD_INST_OPERANDS) &>/dev/null; then 
+          echo "> ibm-events-operator is already deployed"
+        else
+          {{- if semverCompare ">5.3.0" .Values.cpd_version }}
+          echo "> CASE DOWNLOAD ibm_events_operator"
+          if $(params.CASE_FROM_OCI); then
+            case-download --release=$(params.VERSION) --components=ibm_events_operator --from_oci=$(params.CASE_FROM_OCI) --oci_location=$(params.OCI_LOCATION)
+          else
+            case-download --release=$(params.VERSION) --components=ibm_events_operator
+          fi
+          echo
+          echo "> deploy-events-operator"
+          deploy-events-operator --release=$(params.VERSION) --cluster_resources=true
+          echo
+          echo "apply ibm-events-operator-crds.yaml"
+          oc apply -f /tmp/work/ibm-events-operator-crds.yaml --server-side --force-conflicts
+          {{- end }}
+          if oc get deployment ibm-events-cluster-operator -n ibm-knative-events &>/dev/null; then 
+            echo "> ibm-knative-events is already installed, skipping operator installation"
+          else
+            echo
+            echo "knative-setup"
+            echo
+            deploy-knative-eventing --release=$(params.VERSION) --block_storage_class=$(params.STG_CLASS_BLOCK)
+          fi
+        
+          {{- if semverCompare ">5.3.0" .Values.cpd_version }}
+          echo "> Waiting for namespaces $(params.PROJECT_CPD_INST_OPERATORS) and $(params.PROJECT_CPD_INST_OPERANDS) to be created"
+          until oc get namespace $(params.PROJECT_CPD_INST_OPERATORS) &>/dev/null && oc get namespace $(params.PROJECT_CPD_INST_OPERANDS) &>/dev/null; do
+            echo -n "."
+            sleep 2
+          done
+          echo
+          echo "> Namespaces $(params.PROJECT_CPD_INST_OPERATORS) and $(params.PROJECT_CPD_INST_OPERANDS) are present"
+          echo
+          echo "> Deploying ibm-events-operator"
+            deploy-events-operator --release=$(params.VERSION) --events_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) --events_operand_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+          {{- end }}
+        fi
     - name: CP-INSTALL-OPTIONS
       value: cpd-install-pipeline-install-option
-    - name: AIRGAP-SECRET
+    - name: PRIVATE_REGISTRY_SECRET
       value: private-registry-secret
     runAfter:
     - check-prereq
+    - update-global-pull-secret
+    - kubelet-pod-pids-limit
+    - kubelet-db2-limited-priv
     taskRef:
       kind: Task
       name: olm-utils
@@ -838,7 +1070,7 @@ spec:
     retries: 3
     params:
     - name: OLM_UTILS_IMAGE
-      value: icr.io/cpopen/cpd/olm-utils-v4
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: OLM_CMD
       value: |
         echo "> Deploy Redhat Cert-Manager Operator"
@@ -883,10 +1115,13 @@ spec:
         oc wait --for=condition=Ready=true pod --all -n cert-manager
     - name: CP-INSTALL-OPTIONS
       value: cpd-install-pipeline-install-option
-    - name: AIRGAP-SECRET
+    - name: PRIVATE_REGISTRY_SECRET
       value: private-registry-secret
     runAfter:
     - check-prereq
+    - update-global-pull-secret
+    - kubelet-pod-pids-limit
+    - kubelet-db2-limited-priv
     taskRef:
       kind: Task
       name: olm-utils
@@ -899,154 +1134,32 @@ spec:
       operator: in
       values:
       - 'true'
-  - name: kubelet-pod-pids-limit
-    retries: 10
-    params:
-      - name: OLM_UTILS_IMAGE
-        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
-      - name: CP-INSTALL-OPTIONS
-        value: $(params.CP-INSTALL-OPTIONS)
-      - name: OLM_CMD
-        value: |-
-          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-            apply-pid-limit
-          else
-            echo "No MachineConfig Found"
-          fi
-    taskRef:
-      kind: Task
-      name: olm-utils
-    when:
-      - input: $(params.APPLY_MACHINECONFIG)
-        operator: in
-        values:
-        - "true"
-        - "yes"
-  - name: kubelet-db2-limited-priv
-    retries: 10
-    params:
-      - name: OLM_UTILS_IMAGE
-        value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
-      - name: CP-INSTALL-OPTIONS
-        value: $(params.CP-INSTALL-OPTIONS)
-      - name: OLM_CMD
-        value: |-
-          if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
-            apply-db2-kubelet --self_managed=true
-          else
-            echo "No MachineConfig Found ..."
-            platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
 
-            case $platformSpec in 
-              IBMCloud)
-                echo "\nIBMCloud ROKS detected"
-                apply-db2-kubelet --openshift_type=roks
 
-                echo "* [Applying kubelet config without reboot]"
-                echo "* Fetching cp4d-kubelet.conf"
-                oc extract cm/cp4d-kubelet-conf -n kube-system --to=/tmp
-
-                echo "* Deploying new kebelet"
-                for n in `oc get node -o name`; do 
-                  oc adm copy-to-node --copy=/tmp/cp4d-kubelet.conf=/etc/kubernetes/kubelet.conf $n
-                done
-
-                echo "* Restarting kubelet"
-                oc adm restart-kubelet nodes --all --directive=RemoveKubeletKubeconfig
-              ;;
-              *)
-                echo "Can't detect CloudProvider. Don't know how to apply configuration"
-              ;;
-            esac
-          fi
-    taskRef:
-      kind: Task
-      name: olm-utils
-    when:
-      - input: $(params.DB2_LIMITED_PRIV)
-        operator: in
-        values:
-        - "true"
-        - "yes"
-  - name: update-global-pull-secret
-    params:
-    - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
-    - name: CP-INSTALL-OPTIONS
-      value: $(params.CP-INSTALL-OPTIONS)
-    - name: OLM_CMD
-      value: |-
-        {{ if not .Values.airgap.enabled }}
-        add-icr-cred-to-global-pull-secret \
-        --entitled_registry_key=$(params.IBM_ENTITLEMENT_KEY)
-        {{ else }}
-        mkdir -p pull-secret && \
-        oc extract secret/pull-secret -n openshift-config --to=pull-secret && \
-        mkdir -p {{ .Values.airgap.private_registry_secret }} && \
-        oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to={{ .Values.airgap.private_registry_secret }} && \
-        jq -s '.[0] * .[1]' pull-secret/.dockerconfigjson {{ .Values.airgap.private_registry_secret }}/.dockerconfigjson > .dockerconfigjson && \
-        oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson
-        {{ end }}
-
-        if [[ $(oc get mcp -o name | wc -l) -eq 0 ]]; then
-          platformSpec=$(oc get Infrastructure/cluster -o jsonpath='{.spec.platformSpec.type}')
-          echo
-          echo "non-MCP cluster detected, activating workaround"
-          case $platformSpec in 
-            KubeVirt )
-              echo "KubeVirt detected, activating workaround"
-              echo
-              dockerconfigfile=/var/lib/kubelet/config.json
-            ;;
-            IBMCloud )
-              echo "ROKS detected, activating workaround"
-              echo
-              dockerconfigfile=/.docker/config.json
-            ;;
-            *)
-              echo "Unknown platform detected, activating workaround, † cross your fingers †"
-              echo
-              dockerconfigfile=/var/lib/kubelet/config.json
-            ;;
-          esac
-          oc debug $(oc get node -o name | head -n1) -- chroot /host cat $dockerconfigfile > /tmp/config.json
-
-          {{ if not .Values.airgap.enabled }}
-          cat /tmp/config.json | jq --arg auth cp:$(params.IBM_ENTITLEMENT_KEY) '.auths += {"cp.icr.io": {"auth": $auth|@base64}}' > /tmp/config.json.new
-          {{ else }}
-          oc extract secret/$(params.PRIVATE_REGISTRY_SECRET) -n {{ .Release.Namespace }} --to=/tmp
-          jq -s '.[0] * .[1]' /tmp/config.json /tmp/.dockerconfigjson > /tmp/config.json.new
-          {{ end }}
-
-          sleep 1
-          for n in `oc get node -o name`; do 
-            oc adm copy-to-node --copy=/tmp/config.json.new=$dockerconfigfile $n
-          done
-        fi
-    taskRef:
-      kind: Task
-      name: olm-utils
   - name: apply-cluster-components
     params:
     - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
-        apply-cluster-components \
-        --release=$(params.VERSION) \
-        --license_acceptance=$(params.ACCEPT_LICENCE) \
-        --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
-        --case_download=true \
-        --from_oci=$(params.CASE_FROM_OCI) \
-        --oci_location=$(params.OCI_LOCATION)
+        echo
+        echo "> Checking if ibm-licensing is installed"
+        if oc get ibmlicensings.operator.ibm.com instance -n ibm-licensing &> /dev/null; then
+          echo "IBM licensing Operator already installed, skipping operator installation"
+        else
+          echo "> Installing ibm-licensing"
+          apply-cluster-components \
+          --release=$(params.VERSION) \
+          --license_acceptance=$(params.ACCEPT_LICENCE) \
+          --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
+          --case_download=true \
+          --from_oci=$(params.CASE_FROM_OCI) \
+          --oci_location=$(params.OCI_LOCATION)
+        fi
     runAfter:
-    - check-prereq
-    - cert-manager
-    - update-global-pull-secret
-    - kubelet-pod-pids-limit
-    - kubelet-db2-limited-priv
+    - cert-manager  
     taskRef:
       kind: Task
       name: olm-utils
@@ -1059,51 +1172,33 @@ spec:
         value: $(params.CP-INSTALL-OPTIONS)
       - name: OLM_CMD
         value: |
-          IMAGE_PULL_CREDENTIALS=$(echo -n "cp:$(params.IBM_ENTITLEMENT_KEY)" | base64 -w 0)
-          cat <<EOF > dockerconfig.json 
-          {
-            "auths": {
-              "cp.icr.io": {
-                "auth": "${IMAGE_PULL_CREDENTIALS}"
-              },
-              "icr.io":{
-                "auth": "${IMAGE_PULL_CREDENTIALS}"
-              }
-            }
-          }
-          EOF
-
-          for ns in $(params.PROJECT_SCHEDULING_SERVICE); do
-            oc project ${ns} > /dev/null && echo "Project ${ns} already exists" || oc new-project ${ns}
-            if oc get secret ibm-entitlement-key -n ${ns} > /dev/null; then
-              echo "ibm-entitlement-key already present in ns $ns"
-            else
-              oc create secret generic ibm-entitlement-key \
-              --from-file=.dockerconfigjson=dockerconfig.json \
-              --namespace=${ns}
-            fi
-          done
-
-          # echo "CASE_DOWNLOAD"
-          # case-download \
-          # --components=scheduler \
-          # --release=$(params.VERSION) \
-          # --from_oci=$(params.CASE_FROM_OCI) \
-          # --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
-          # --cluster_resources=true
-          # [ $? -ne 0 ] && exit 1 
-          # echo 
-          # echo "APPLY_CLUSTERSCOPED_RESOURCES" 
-          # oc apply -f /tmp/work/cluster_scoped_resources.yaml --server-side --force-conflicts 
-          # [ $? -ne 0 ] && exit 1 
-          # echo 
-          # echo "INSTALL_SCEDULER"
-
-          # apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --image_pull_prefix=$(params.IMAGE_PULL_PREFIX)
-          ## BUG with 5.3.0 - need to add --from_oci=tru
-          apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --from_oci=$(params.CASE_FROM_OCI) --use_olm=true
+          echo
+          echo "> Check if IBM scheduler Operator is already installed"
+          if [ $(oc get scheduling.scheduler.spectrumcomputing.ibm.com ibm-cpd-scheduler -n ibm-scheduler -o jsonpath='{.status.cpd-schedulingStatus}') = "Completed" ]; then 
+            echo "> IBM scheduler Operator already installed, skipping operator installation" 
+          else
+            echo "CASE_DOWNLOAD"
+            case-download \
+            --components=scheduler \
+            --release=$(params.VERSION) \
+            --from_oci=$(params.CASE_FROM_OCI) \
+            --oci_location=$(params.OCI_LOCATION) \
+            --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
+            --cluster_resources=true
+            [ $? -ne 0 ] && exit 1
+            echo 
+            echo "APPLY_CLUSTERSCOPED_RESOURCES" 
+            oc apply -f /tmp/work/cluster_scoped_resources.yaml --server-side --force-conflicts 
+            [ $? -ne 0 ] && exit 1 
+            echo 
+            echo "INSTALL_SCEDULER"
+            apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --image_pull_prefix=$(params.IMAGE_PULL_PREFIX)
+            
+            ## BUG with 5.3.0 - need to add --from_oci=true
+            # apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --from_oci=$(params.CASE_FROM_OCI) --use_olm=true
+          fi
     runAfter:
-    - apply-cluster-components
+    - cert-manager
     taskRef:
       kind: Task
       name: olm-utils
@@ -1125,14 +1220,44 @@ spec:
         --cpd_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
         --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
     runAfter:
-    - check-prereq
     - cert-manager
-    - update-global-pull-secret
-    - kubelet-pod-pids-limit
-    - kubelet-db2-limited-priv
     taskRef:
       kind: Task
       name: olm-utils
+  # - name: events-operator
+  #   retries: 3
+  #   params:
+  #   - name: OLM_UTILS_IMAGE
+  #     value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+  #   - name: OLM_CMD
+  #     value: |
+  #       # # echo 
+  #       # # echo "> Check if ibm-knative-events is already installed" 
+  #       # # if oc get deployment ibm-events-cluster-operator -n ibm-knative-events &>/dev/null; then 
+  #       # #   echo "> ibm-knative-events is already installed, skipping operator installation" 
+  #       # # else
+  #       # #   deploy-events-operator --release=$(params.VERSION) --events_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) --events_operand_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+  #       # # fi
+  #       # deploy-events-operator --release=$(params.VERSION) --events_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) --events_operand_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+  #   - name: CP-INSTALL-OPTIONS
+  #     value: cpd-install-pipeline-install-option
+  #   - name: PRIVATE_REGISTRY_SECRET
+  #     value: private-registry-secret
+  #   runAfter:
+  #   - knative-eventing
+  #   - authorize-inst-topology
+  #   taskRef:
+  #     kind: Task
+  #     name: olm-utils
+  #   when:
+  #   - input: $(tasks.check-prereq.results.knative)
+  #     operator: in
+  #     values:
+  #     - 'true'
+  #   - input: $(params.INSTALL_PREREQUISITE)
+  #     operator: in
+  #     values:
+  #     - 'true'
   - name: set-db2-limited-privs
     params:
     - name: OLM_UTILS_IMAGE
@@ -1169,22 +1294,18 @@ spec:
       value: $(params.CP-INSTALL-OPTIONS)
     - name: OLM_CMD
       value: |-
-        
-        IMAGE_PULL_CREDENTIALS=$(echo -n "cp:$(params.IBM_ENTITLEMENT_KEY)" | base64 -w 0)
-        cat <<EOF > dockerconfig.json 
-        {
-          "auths": {
-            "cp.icr.io": {
-              "auth": "${IMAGE_PULL_CREDENTIALS}"
-            },
-            "icr.io":{
-              "auth": "${IMAGE_PULL_CREDENTIALS}"
-            }
-          }
-        }
-        EOF
+        {{- if .Values.airgap.enabled }}
+        cp /opt/ansible/.airgap/secrets/config.json ./dockerconfig.json
+        {{- else }}
+        echo "extract icr.io creds from global pull secret"
+        oc extract secret/pull-secret -n openshift-config --to - | jq '{"auths":{"cp.icr.io": .auths["cp.icr.io"],"icr.io": .auths["cp.icr.io"]}}' > dockerconfig.json
+        {{- end }}
 
-        for ns in $(params.PROJECT_CPD_INST_OPERATORS) $(params.PROJECT_CPD_INST_OPERANDS); do
+        NAMESPACES="$(params.PROJECT_CPD_INST_OPERATORS) $(params.PROJECT_CPD_INST_OPERANDS)"
+        if $(params.SCHEDULER); then
+          NAMESPACES="$NAMESPACES $(params.PROJECT_SCHEDULING_SERVICE)"
+        fi
+        for ns in $NAMESPACES; do
           if oc get secret ibm-entitlement-key -n ${ns} > /dev/null; then
             echo "ibm-entitlement-key already present in ns $ns"
           else
@@ -1193,9 +1314,28 @@ spec:
             --namespace=${ns}
           fi
         done
-
     runAfter:
     - authorize-inst-topology
+    - apply-scheduler
+    taskRef:
+      kind: Task
+      name: olm-utils
+  - name: apply-entitlement
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        for cmp in $(echo $(params.ENTITLEMENT) | tr , " "); do
+          apply-entitlement \
+          --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
+          --entitlement=$cmp --production=$(params.PRODUCTION)
+        done
+    runAfter:
+    - apply-cluster-components
+    timeout: "1h0m0s"
     taskRef:
       kind: Task
       name: olm-utils
@@ -1212,6 +1352,7 @@ spec:
             --components=cpd_platform,$(params.COMPONENTS) \
             --release=$(params.VERSION) \
             --from_oci=$(params.CASE_FROM_OCI) \
+            --oci_location=$(params.OCI_LOCATION) \
             --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
             --cluster_resources=true
             [ $? -ne 0 ] && exit 1
@@ -1234,33 +1375,14 @@ spec:
     runAfter:
     - openshift-ai
     - setup-mcg
-    - knative-eventing
-    - image-pull-secret
     - set-db2-limited-privs
-    - apply-scheduler
+    - image-pull-secret
+    - apply-entitlement
+    - knative-eventing
     timeout: "8h0m0s"
     taskRef:
       kind: Task
       name: olm-utils
-  - name: apply-entitlement
-    params:
-    - name: OLM_UTILS_IMAGE
-      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}
-    - name: CP-INSTALL-OPTIONS
-      value: $(params.CP-INSTALL-OPTIONS)
-    - name: OLM_CMD
-      value: |-
-        for cmp in $(echo $(params.ENTITLEMENT) | tr , " "); do
-          apply-entitlement \
-          --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
-          --entitlement=$cmp --production=$(params.PRODUCTION)
-        done
-    runAfter:
-    - cpd-install
-    timeout: "1h0m0s"
-    taskRef:
-      kind: Task
-      name: olm-utils  
   - name: instance-details
     params:
     - name: OLM_UTILS_IMAGE

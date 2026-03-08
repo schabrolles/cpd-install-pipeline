@@ -1,0 +1,67 @@
+{{- if and (semverCompare ">=5.3.1" .Values.cpd_version) (semverCompare "~5.3.0" .Values.cpd_version) -}}
+{{/* Avoid to overwright the cpd-install-pipeline-install-option cm if exists */}}
+{{- $cm := lookup "v1" "ConfigMap" .Release.Namespace "cpd-install-pipeline-install-option" -}}
+{{- if not $cm }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  annotations:
+    helm.sh/resource-policy: keep
+  name: {{ .Release.Name }}-install-option
+  namespace: {{ .Release.Namespace }}
+data:
+  install-options.yml: |
+    ---
+    # ............................................................................
+    # watsonx.ai parameters
+    # ............................................................................
+    non_olm:
+      watsonxAi:
+        liteInstall: false
+    ---
+    # ............................................................................
+    # watsonx Orchestrate parameters
+    # ............................................................................
+    non_olm:
+      watsonxOrchestrate:
+          # choose between, agentic, agentic_assistant
+          installMode: "agentic"
+          watsonxAI:
+            watsonxaiifm: false
+            # syomModels availables are ibm-granite-8b-unified-api-model-v2
+            # syomModels: [ibm-granite-8b-unified-api-model-v2]
+            syomModels: []
+            # ootbModels availables are ibm-slate-30m-english-rtrvr,granite-3-8b-instruct,llama-3-1-70b-instruct,llama-3-2-90b-vision-instruct
+            # ootbModels: [ibm-slate-30m-english-rtrvr,llama-3-2-90b-vision-instruct
+            ootbModels: []
+    ---
+    # ............................................................................
+    # watsonx.governance parameters
+    # ............................................................................
+    non_olm:
+      watsonxGovernance:
+        # installType: all,mm or rcf
+        installType: all
+        enableFactsheet: true
+        enableOpenpages: true
+        enableOpenscale: true
+
+      #   openpagesInstanceCR: "op-wxgov-instance"
+      #   openPages:
+      #     databaseType: internal
+      #     database: Db2
+      #     dbSecretName: <secret-name>
+
+      override_components_meta:
+        watsonx_governance:
+          status_max_retries: 240
+    ---
+    # ............................................................................
+    # watsonx.data parameters
+    # ............................................................................
+    non_olm:
+      watsonxData:
+        enable_lite_milvus: false
+        scaleConfig: small
+{{- end -}}
+{{- end -}}

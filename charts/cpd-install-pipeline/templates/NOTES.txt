@@ -91,5 +91,5 @@ spec:
   taskRunTemplate:
     serviceAccountName: pipeline
   timeouts:
-    pipeline: 5h0m0`
+    pipeline: 8h0m0`
 ```

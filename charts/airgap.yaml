@@ -6,7 +6,8 @@
 arch: "x86"
 
 # default olm utils image to use
-default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v4"
+#default_olm_utils_image: "icr.io/cpopen/cpd/olm-utils-v4"
+default_olm_utils_image: "artifactory.fir.nca.ihost.com/full.icr.io/cpopen/cpd/olm-utils-v4"
 
 # Cloudpak for Data / OLM version to set as default in pipelines
 cpd_version: "5.3.1"
@@ -27,8 +28,8 @@ proxy:
 
 # Private registry docker secret for disconnected (airgap) installation
 airgap:
-  enabled: false
-  image_pull_prefix: "icr.io"
+  enabled: true
+  image_pull_prefix: "artifactory.fir.nca.ihost.com/full.icr.io"
   private_registry_secret: "private-registry-secret"
 
 tektonPatch:
