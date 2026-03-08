@@ -1224,40 +1224,6 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
-  # - name: events-operator
-  #   retries: 3
-  #   params:
-  #   - name: OLM_UTILS_IMAGE
-  #     value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
-  #   - name: OLM_CMD
-  #     value: |
-  #       # # echo 
-  #       # # echo "> Check if ibm-knative-events is already installed" 
-  #       # # if oc get deployment ibm-events-cluster-operator -n ibm-knative-events &>/dev/null; then 
-  #       # #   echo "> ibm-knative-events is already installed, skipping operator installation" 
-  #       # # else
-  #       # #   deploy-events-operator --release=$(params.VERSION) --events_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) --events_operand_ns=$(params.PROJECT_CPD_INST_OPERANDS)
-  #       # # fi
-  #       # deploy-events-operator --release=$(params.VERSION) --events_operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) --events_operand_ns=$(params.PROJECT_CPD_INST_OPERANDS)
-  #   - name: CP-INSTALL-OPTIONS
-  #     value: cpd-install-pipeline-install-option
-  #   - name: PRIVATE_REGISTRY_SECRET
-  #     value: private-registry-secret
-  #   runAfter:
-  #   - knative-eventing
-  #   - authorize-inst-topology
-  #   taskRef:
-  #     kind: Task
-  #     name: olm-utils
-  #   when:
-  #   - input: $(tasks.check-prereq.results.knative)
-  #     operator: in
-  #     values:
-  #     - 'true'
-  #   - input: $(params.INSTALL_PREREQUISITE)
-  #     operator: in
-  #     values:
-  #     - 'true'
   - name: set-db2-limited-privs
     params:
     - name: OLM_UTILS_IMAGE
