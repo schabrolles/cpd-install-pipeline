@@ -22,6 +22,7 @@ spec:
       name: PROJECT_CPD_INST_OPERANDS
       type: string
   tasks:
+    {{- if semverCompare "<5.3.0" .Values.cpd_version }}
     - name: get-license
       params:
         - name: OLM_UTILS_IMAGE
@@ -34,6 +35,7 @@ spec:
       taskRef:
         kind: Task
         name: olm-utils
+    {{- end }}
     - name: instance-details
       params:
         - name: OLM_UTILS_IMAGE

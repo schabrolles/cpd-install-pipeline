@@ -68,10 +68,10 @@
           "description": "Activate options for disconnected (private registry) installation",
           "default": false
         },
-        "private_registry": {
+        "image_pull_prefix": {
           "type": "string",
-          "description": "docker registry url prefix for the private registry which contain cp.icr.io mirror (when airgap_mode is enabled)",
-          "default": "artifactory.mop.ibm"
+          "description": "The location from which your cluster pulls images (IMAGE_PULL_PREFIX/cpopen).",
+          "default": "myprivate_registry.com:5000/icr.io"
         },
         "private_registry_secret": {
           "type": "string",

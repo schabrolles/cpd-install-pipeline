@@ -11,19 +11,15 @@ metadata:
 spec:
   params:
     {{- if .Values.airgap.enabled }}
-    - default: {{ .Values.airgap.private_registry }}
-      description: location of your private container registry (artifactory.mop.ibm)
-      name: PRIVATE_REGISTRY_LOCATION
-      type: string
+    - default: {{ .Values.airgap.image_pull_prefix }}
+      description: The location from which your cluster pulls images (IMAGE_PULL_PREFIX/cpopen).
+      name: IMAGE_PULL_PREFIX
+      type: "string"
     - default: {{ .Values.airgap.private_registry_secret }}
       description: registry-secret containing your private registry credential
       name: PRIVATE_REGISTRY_SECRET
       type: string
     {{- end }}
-    - default: "icr.io"
-      description: The location from which your cluster pulls images.
-      name: IMAGE_PULL_PREFIX
-      type: "string"
     - default: {{ .Values.default_olm_utils_image }}
       description: olm-utils images
       name: OLM_UTILS_IMAGE
@@ -41,7 +37,7 @@ spec:
       name: COMPONENTS
       type: string
     - default: "{{ .Release.Name }}-install-option"
-      description: configMap which contains cloud pak install-options (EDIT this configMap to customize your install before starting the pipeline)"
+      description: configMap which contains cloud pak install-options (EDIT THIS CONFIGMAP TO CUSTOMIZE YOUR COMPONENTS INSTALLATION BEFORE STARTING THE PIPELINE)"
       name: CP-INSTALL-OPTIONS
       type: string
     - default: "true"
@@ -146,7 +142,7 @@ spec:
       {{- if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{- end }}
-    - {{ if .Values.airgap.enabled }}default: {{ .Values.airgap.private_registry }}/cp.icr.io/cpopen {{ else }}default: "cp.icr.io/cpopen"{{ end }}
+    - {{ if .Values.airgap.enabled }}default: {{ .Values.airgap.image_pull_prefix }}/cpopen {{ else }}default: "cp.icr.io/cpopen"{{ end }}
       description: only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages
       name: OCI_LOCATION
       type: "string"
@@ -486,6 +482,39 @@ spec:
       values:
       - "true"
       - "yes"
+  - name: wait-for-mcp
+    retries: 10
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |-
+        if [[ $(oc get mcp -o name | wc -l) -gt 0 ]]; then
+          echo "Waiting for all MachineConfigPools to be ready..."
+          COUNT=0 
+          until [[ $COUNT -ge 3 ]]; do
+            for mcp in $(oc get mcp -o name); do
+              echo "Waiting for $mcp to be updated and ready..."
+              oc wait --for=condition=Updated=True $mcp --timeout=30m
+            done
+            COUNT=$((COUNT+1))
+            echo "check MCPs COUNT $COUNT/3"
+            sleep 10
+          done
+          echo "All MachineConfigPools are ready"
+        else
+          echo "No MachineConfigPools found, skipping wait"
+        fi
+    taskRef:
+      kind: Task
+      name: olm-utils
+    runAfter:
+    - check-prereq
+    - update-global-pull-secret
+    - kubelet-pod-pids-limit
+    - kubelet-db2-limited-priv
   - name: nfd-operator
     retries: 3
     params:
@@ -581,10 +610,7 @@ spec:
     - name: PRIVATE_REGISTRY_SECRET
       value: private-registry-secret
     runAfter:
-    - check-prereq
-    - update-global-pull-secret
-    - kubelet-pod-pids-limit
-    - kubelet-db2-limited-priv
+    - wait-for-mcp
     taskRef:
       kind: Task
       name: olm-utils
@@ -1050,10 +1076,7 @@ spec:
     - name: PRIVATE_REGISTRY_SECRET
       value: private-registry-secret
     runAfter:
-    - check-prereq
-    - update-global-pull-secret
-    - kubelet-pod-pids-limit
-    - kubelet-db2-limited-priv
+    - wait-for-mcp
     taskRef:
       kind: Task
       name: olm-utils
@@ -1118,10 +1141,7 @@ spec:
     - name: PRIVATE_REGISTRY_SECRET
       value: private-registry-secret
     runAfter:
-    - check-prereq
-    - update-global-pull-secret
-    - kubelet-pod-pids-limit
-    - kubelet-db2-limited-priv
+    - wait-for-mcp
     taskRef:
       kind: Task
       name: olm-utils
@@ -1192,10 +1212,7 @@ spec:
             [ $? -ne 0 ] && exit 1 
             echo 
             echo "INSTALL_SCEDULER"
-            apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --image_pull_prefix=$(params.IMAGE_PULL_PREFIX)
-            
-            ## BUG with 5.3.0 - need to add --from_oci=true
-            # apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) --from_oci=$(params.CASE_FROM_OCI) --use_olm=true
+            apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE){{- if .Values.airgap.enabled -}} --image_pull_prefix=$(params.IMAGE_PULL_PREFIX){{- end }}
           fi
     runAfter:
     - cert-manager
@@ -1336,7 +1353,9 @@ spec:
             --instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
             --block_storage_class=$(params.STG_CLASS_BLOCK) \
             --file_storage_class=$(params.STG_CLASS_FILE) \
+            {{- if .Values.airgap.enabled }} 
             --image_pull_prefix=$(params.IMAGE_PULL_PREFIX) \
+            {{- end }}
             --param-file=/tmp/install-options/install-options.yml
     runAfter:
     - openshift-ai

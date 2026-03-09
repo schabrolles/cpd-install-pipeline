@@ -1,3 +1,4 @@
+{{- if semverCompare "<5.3.0" .Values.cpd_version -}}
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
@@ -80,3 +81,4 @@ spec:
       taskRef:
         kind: Task
         name: olm-utils
+{{- end -}}
