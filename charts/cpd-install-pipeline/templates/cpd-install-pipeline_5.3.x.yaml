@@ -1212,7 +1212,7 @@ spec:
             [ $? -ne 0 ] && exit 1 
             echo 
             echo "INSTALL_SCEDULER"
-            apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE){{- if .Values.airgap.enabled -}} --image_pull_prefix=$(params.IMAGE_PULL_PREFIX){{- end }}
+            apply-scheduler --license_acceptance=true --release=$(params.VERSION) --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE){{- if .Values.airgap.enabled -}}  --image_pull_prefix=$(params.IMAGE_PULL_PREFIX){{- end }}
           fi
     runAfter:
     - cert-manager
