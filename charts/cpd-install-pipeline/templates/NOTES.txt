@@ -19,6 +19,79 @@ Your Pipeline to install CPD on your cluster has been deployed.
 * You can use the openshift console to start the installation graphically
 * or use "oc create -f" with a PipelineRun yaml file. (example bellow)
 
+{{- if semverCompare "~5.3.0" .Values.cpd_version }}
+```
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  {{ if not .Values.airgap.enabled -}}
+  generateName: cpd-install-
+  {{ else -}}
+  generateName: cpd-install-airgap-
+  {{ end -}}
+  namespace: {{ .Release.Namespace }}
+spec:
+  params:
+  {{- if .Values.airgap.enabled }}
+  - name: IMAGE_PULL_PREFIX
+    value: {{ .Values.airgap.image_pull_prefix }}
+  - name: PRIVATE_REGISTRY_SECRET
+    value: {{ .Values.airgap.private_registry_secret }}
+  {{- end }}
+  - name: OLM_UTILS_IMAGE
+    value: {{ .Values.default_olm_utils_image }}
+  - name: VERSION
+    value: {{ .Values.cpd_version }}
+  - name: COMPONENTS
+    value: wml,ws
+  - name: CP-INSTALL-OPTIONS
+    value: {{ .Release.Name }}-install-option
+  - name: INSTALL_PREREQUISITE
+    value: "true"
+  - name: PROJECT_CPD_INST_OPERANDS
+    value: cpd
+  - name: PROJECT_CPD_INST_OPERATORS
+    value: cpd-operators
+  - name: PROJECT_LICENSE_SERVICE
+    value: ibm-licensing
+  - name: SCHEDULER
+    value: "false"
+  - name: PROJECT_SCHEDULING_SERVICE
+    value: ibm-scheduler
+  {{- if not .Values.airgap.enabled }}
+  - name: IBM_ENTITLEMENT_KEY
+    value: >>> PUT YOUR IBM ICR KEY HERE <<<
+  {{- end }}
+  - name: STG_CLASS_BLOCK
+    value: {{ .Values.storageClass.block }}
+  - name: STG_CLASS_FILE
+    value: {{ .Values.storageClass.file }}
+  - name: GPU_OPERATOR_INSTALL
+    value: "false"
+  - name: GPU_OPERATOR_CHANNEL
+    value: "v25.3"
+  - name: ENTITLEMENT
+    value: cpd-enterprise
+  - name: ACCEPT_LICENCE
+    value: "true"
+  - name: PRODUCTION
+    value: "false"
+  - name: APPLY_MACHINECONFIG
+    value: "false"
+  - name: DB2_LIMITED_PRIV
+    value: "false"
+  - name: CASE_FROM_OCI
+    value: "true"
+  - name: OCI_LOCATION
+    value: {{ if .Values.airgap.enabled }}"{{ .Values.airgap.image_pull_prefix }}/cpopen"{{ else }}"cp.icr.io/cpopen"{{ end }}
+  pipelineRef:
+    name: {{ .Release.Name }}
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  timeouts:
+    pipeline: 8h0m0s
+```
+{{- else }}
 ```
 apiVersion: tekton.dev/v1
 kind: PipelineRun
@@ -39,14 +112,14 @@ spec:
     value: wml,ws
   - name: CP-INSTALL-OPTIONS
     value: {{ .Release.Name }}-install-option
-  - name: INSTALL_PREREQUISITE
-    value: "true"
   - name: PROJECT_CPD_INST_OPERANDS
     value: cpd
   - name: PROJECT_CPD_INST_OPERATORS
     value: cpd-operators
+  {{- if semverCompare "<5.1.0" .Values.cpd_version }}
   - name: PROJECT_CERT_MANAGER
     value: ibm-cert-manager
+  {{- end }}
   - name: PROJECT_LICENSE_SERVICE
     value: ibm-licensing
   - name: PROJECT_SCHEDULING_SERVICE
@@ -71,25 +144,20 @@ spec:
   - name: ACCEPT_LICENCE
     value: "true"
   - name: APPLY_MACHINECONFIG
-    value: 'true'
+    value: "true"
   - name: DB2_LIMITED_PRIV
-    value: 'false'
-{{- if semverCompare "~5.3.0" .Values.cpd_version }}
-  - name: IMAGE_PULL_PREFIX
-    value: "icr.io"
-{{- end }}
+    value: "false"
   - name: CASE_FROM_OCI
-    value: 'true'
+    value: "true"
   - name: OCI_LOCATION
-    value: "icr.io/cpopen"
-{{- if semverCompare "<5.3.0" .Values.cpd_version }}
+    value: {{ if .Values.airgap.enabled }}"{{ .Values.airgap.image_pull_prefix }}/cpopen"{{ else }}"cp.icr.io/cpopen"{{ end }}
   - name: NO_GPU
-    value: 'true'
-{{- end }}
+    value: "true"
   pipelineRef:
     name: {{ .Release.Name }}
   taskRunTemplate:
     serviceAccountName: pipeline
   timeouts:
-    pipeline: 8h0m0`
+    pipeline: 8h0m0s
 ```
+{{- end }}
