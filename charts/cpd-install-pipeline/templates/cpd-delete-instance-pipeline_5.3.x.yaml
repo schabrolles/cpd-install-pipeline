@@ -99,9 +99,13 @@ spec:
           echo "> force cleaning finalizers from remaining CPD resources in $(params.PROJECT_CPD_INST_OPERANDS) namespace"
           RESOURCES_TO_REMOVE=$(oc api-resources -o name | awk '/cpd.ibm.com/ || /datagovernor.ibm.com/ || /security.ibm.com/ { TOREMOVE=TOREMOVE","$1 } END {gsub("^,","",TOREMOVE) ; print TOREMOVE}')
 
-          for resource in $(oc get $RESOURCES_TO_REMOVE -n $(params.PROJECT_CPD_INST_OPERANDS) -o name);do 
-           oc patch -n $(params.PROJECT_CPD_INST_OPERANDS) $resource --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
+          # Remove finalizers from remaining CPD resources
+          for resource in $(oc get $RESOURCES_TO_REMOVE -n $(params.PROJECT_CPD_INST_OPERANDS) -o name); do
+            if oc get -n $(params.PROJECT_CPD_INST_OPERANDS) "$resource" -o json | jq -e '.metadata.finalizers' >/dev/null 2>&1; then
+              oc patch -n $(params.PROJECT_CPD_INST_OPERANDS) "$resource" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
+            fi
           done
+
           echo
           echo "Delete $(params.PROJECT_CPD_INST_OPERANDS)"
           oc delete project $(params.PROJECT_CPD_INST_OPERANDS) --ignore-not-found --wait=false
