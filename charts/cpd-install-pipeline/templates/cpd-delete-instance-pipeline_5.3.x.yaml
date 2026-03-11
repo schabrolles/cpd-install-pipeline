@@ -102,7 +102,7 @@ spec:
           # Remove finalizers from remaining CPD resources
           for resource in $(oc get $RESOURCES_TO_REMOVE -n $(params.PROJECT_CPD_INST_OPERANDS) -o name); do
             if oc get -n $(params.PROJECT_CPD_INST_OPERANDS) "$resource" -o json | jq -e '.metadata.finalizers' >/dev/null 2>&1; then
-              oc patch -n $(params.PROJECT_CPD_INST_OPERANDS) "$resource" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]'
+              oc patch -n $(params.PROJECT_CPD_INST_OPERANDS) "$resource" --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' || true
             fi
           done
 

@@ -1352,10 +1352,8 @@ spec:
             --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
             --instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) \
             --block_storage_class=$(params.STG_CLASS_BLOCK) \
-            --file_storage_class=$(params.STG_CLASS_FILE) \
-            {{ if .Values.airgap.enabled }} 
-            --image_pull_prefix=$(params.IMAGE_PULL_PREFIX) \
-            {{ end }}
+            --file_storage_class=$(params.STG_CLASS_FILE){{- if .Values.airgap.enabled }} \
+            --image_pull_prefix=$(params.IMAGE_PULL_PREFIX){{- end }} \
             --param-file=/tmp/install-options/install-options.yml
     runAfter:
     - openshift-ai
