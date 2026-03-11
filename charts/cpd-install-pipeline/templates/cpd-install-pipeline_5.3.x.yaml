@@ -500,7 +500,8 @@ spec:
               oc wait --for=condition=Updated=True $mcp --timeout=30m
             done
             COUNT=$((COUNT+1))
-            echo "check MCPs COUNT $COUNT/3"
+            echo "NO MCP running. COUNT $COUNT/3"
+            echo
             sleep 10
           done
           echo "All MachineConfigPools are ready"
