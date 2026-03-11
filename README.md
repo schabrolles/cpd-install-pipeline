@@ -2,7 +2,7 @@
 
 Install automatically IBM Cloud Pak for Data using Tekton Pipeline
 
-<img width="1708" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/102ca157-3dce-4930-9c26-ce2058639eef">
+<img width="1608" height="401" alt="Capture d’écran 2026-03-11 à 10 42 49" src="https://github.com/user-attachments/assets/8a22ca7d-8c67-4a0a-9586-0f7297ed5fed" />
 
 ## Prerequisite:
 
