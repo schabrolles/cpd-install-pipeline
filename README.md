@@ -45,18 +45,20 @@ spec:
     url: 'https://schabrolles.github.io/cpd-install-pipeline'
 ```
 
-- Then create a project: `cpd-install` for example.
-- Switch to **developer view** / **add**
-- Select Helm charts and search for cpd-install
+- Then create a project: `cpd-install` (for example).
+- Switch to **developer view** / **add** (for Openshift <4.19)
+- Select Helm charts and search for cpd-install (for Openshift <4.19)
+- On Openshift 4.20 and later, open the new Ecosystem menu and search for "cpd-install"
 
 <img width="1856" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/b15b43fd-3d01-405e-a602-b61a87bab204">
 
 - Click on **Create**
 
-<img width="1491" alt="image" src="https://github.com/schabrolles/cpd-install-pipeline/assets/19491077/0cc8c07d-0602-473e-81a6-75d8f7144e56">
+<img width="822" height="615" alt="image" src="https://github.com/user-attachments/assets/9c9d50b3-5c56-48ca-b05a-a45b12a03f31" />
 
-- Select the Chart version you want (latest: **5.2.2**)
+- Select the Chart version you want (latest: **5.3.1**)
 - **If you run on Power or Z, set the arch value before validating** (`ppc64le` or `s390x`)
+
 
 ### 1bis- Configuring cpd-install Tekton Pipeline from the CLI
 
