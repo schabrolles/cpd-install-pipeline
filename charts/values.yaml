@@ -29,6 +29,7 @@ proxy:
 airgap:
   enabled: false
   image_pull_prefix: "icr.io"
+  oci_location: "icr.io/cpopen"
   private_registry_secret: "private-registry-secret"
 
 tektonPatch:

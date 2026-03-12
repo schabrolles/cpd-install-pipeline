@@ -83,7 +83,7 @@ spec:
   - name: CASE_FROM_OCI
     value: "true"
   - name: OCI_LOCATION
-    value: {{ if .Values.airgap.enabled }}"{{ .Values.airgap.image_pull_prefix }}/cpopen"{{ else }}"cp.icr.io/cpopen"{{ end }}
+    value: {{ if .Values.airgap.enabled }}"{{ .Values.airgap.oci_location }}"{{ else }}"cp.icr.io/cpopen"{{ end }}
   pipelineRef:
     name: {{ .Release.Name }}
   taskRunTemplate:

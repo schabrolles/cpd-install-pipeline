@@ -142,7 +142,7 @@ spec:
       {{- if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{- end }}
-    - {{ if .Values.airgap.enabled }}default: {{ .Values.airgap.image_pull_prefix }}/cpopen {{ else }}default: "cp.icr.io/cpopen"{{ end }}
+    - {{ if .Values.airgap.enabled }}default: {{ .Values.airgap.oci_location }}{{ else }}default: "cp.icr.io/cpopen"{{ end }}
       description: only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages
       name: OCI_LOCATION
       type: "string"
