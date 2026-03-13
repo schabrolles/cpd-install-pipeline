@@ -249,10 +249,16 @@ spec:
               echo -n "true" > $(results.openshift-ai.path)
               echo " => Setup OpenShift AI"
             fi
+            # Verify if knative_eventing is requested in watsonx_orchestrate install-options (mode agentic_assistant or agentic_skills_assistant)
+            
+            if [ $(yq 'select(.non_olm.watsonxOrchestrate != null) | .non_olm.watsonxOrchestrate.installMode' /tmp/install-options/install-options.yml) = "agentic_assistant" ] || [ $(yq 'select(.non_olm.watsonxOrchestrate != null) | .non_olm.watsonxOrchestrate.installMode' /tmp/install-options/install-options.yml) = "agentic_skills_assistant" ]; then
+              echo -n "true" > $(results.ibm-events-operator.path) 
+              echo " => Setup Knative Eventing"
+            fi
+
             echo -n "true" > $(results.mcg.path)
             echo " => Setup MultiCloud Gateway"
-            echo -n "true" > $(results.ibm-events-operator.path)
-            echo " => Setup Knative Eventing"
+
           fi
 
           if [[ ",$COMPONENTS," == *",watsonx_data,"* ]]; then
