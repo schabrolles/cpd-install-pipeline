@@ -65,8 +65,7 @@ spec:
           value: '$(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}'
         - name: OLM_CMD
           value: |-
-            list-deployed-components \
-            --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+            list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
         - name: CP-INSTALL-OPTIONS
           value: "{{ .Release.Name }}-install-option"
       taskRef:

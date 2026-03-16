@@ -1404,4 +1404,18 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
+  - name: list-deployed-components
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}
+    - name: OLM_CMD
+      value: |-
+        list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    runAfter:
+    - cpd-install
+    taskRef:
+      kind: Task
+      name: olm-utils
 {{- end -}}
