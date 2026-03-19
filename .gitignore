@@ -13,6 +13,7 @@ Thumbs.db
 *.tgz
 charts/*/charts/
 .helm/
+values
 
 # Temporary files
 *.tmp

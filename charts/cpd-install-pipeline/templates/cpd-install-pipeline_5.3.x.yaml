@@ -142,10 +142,16 @@ spec:
       {{- if .Values.tektonPatch.activateEnum }}
       enum: ["true", "false"]
       {{- end }}
-    - {{ if .Values.airgap.enabled }}default: {{ .Values.airgap.oci_location }}{{ else }}default: "cp.icr.io/cpopen"{{ end }}
+    # - {{ if .Values.airgap.enabled }}default: {{ .Values.airgap.oci_location }}{{ else }}default: "cp.icr.io/cpopen"{{ end }}
+    #   description: only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages
+    #   name: OCI_LOCATION
+    #   type: "string"
+    {{- if .Values.airgap.enabled }}
+    - default: {{ .Values.airgap.oci_location }}
       description: only if CASE_FROM_OCI=true, set the registry URL from which you want to download CASE packages
       name: OCI_LOCATION
       type: "string"
+    {{- end }}
   tasks:
   - name: check-prereq
     params:
@@ -1035,8 +1041,6 @@ spec:
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
     - name: OLM_CMD
       value: |
-        # case-download --release=$(params.VERSION) --components=ibm_events_operator --from_oci=$(params.CASE_FROM_OCI) --oci_location=$(params.OCI_LOCATION)
-        # deploy-events-operator --release=5.3.1 --cluster_resources=true
         echo 
         echo "> Check if ibm-events-operator is already installed" 
           if oc get kafkas.ibmevents.ibm.com wo-wa-data-governor-kafka -n $(params.PROJECT_CPD_INST_OPERANDS) &>/dev/null; then 
@@ -1045,7 +1049,7 @@ spec:
           {{- if semverCompare ">5.3.0" .Values.cpd_version }}
           echo "> CASE DOWNLOAD ibm_events_operator"
           if $(params.CASE_FROM_OCI); then
-            case-download --release=$(params.VERSION) --components=ibm_events_operator --from_oci=$(params.CASE_FROM_OCI) --oci_location=$(params.OCI_LOCATION)
+            case-download --release=$(params.VERSION) --components=ibm_events_operator --from_oci=$(params.CASE_FROM_OCI) {{ if .Values.airgap.enabled }}--oci_location=$(params.OCI_LOCATION){{ end }}
           else
             case-download --release=$(params.VERSION) --components=ibm_events_operator
           fi
@@ -1182,8 +1186,8 @@ spec:
           --license_acceptance=$(params.ACCEPT_LICENCE) \
           --licensing_ns=$(params.PROJECT_LICENSE_SERVICE) \
           --case_download=true \
-          --from_oci=$(params.CASE_FROM_OCI) \
-          --oci_location=$(params.OCI_LOCATION)
+          --from_oci=$(params.CASE_FROM_OCI) {{ if .Values.airgap.enabled }}\
+          --oci_location=$(params.OCI_LOCATION) {{- end }}
         fi
     runAfter:
     - cert-manager  
@@ -1209,7 +1213,7 @@ spec:
             --components=scheduler \
             --release=$(params.VERSION) \
             --from_oci=$(params.CASE_FROM_OCI) \
-            --oci_location=$(params.OCI_LOCATION) \
+            --oci_location={{ if .Values.airgap.enabled }}$(params.OCI_LOCATION){{ else }}cp.icr.io/cpopen{{ end }} \
             --scheduler_ns=$(params.PROJECT_SCHEDULING_SERVICE) \
             --cluster_resources=true
             [ $? -ne 0 ] && exit 1
@@ -1342,7 +1346,7 @@ spec:
             --components=cpd_platform,$(params.COMPONENTS) \
             --release=$(params.VERSION) \
             --from_oci=$(params.CASE_FROM_OCI) \
-            --oci_location=$(params.OCI_LOCATION) \
+            --oci_location={{ if .Values.airgap.enabled }}$(params.OCI_LOCATION){{ else }}cp.icr.io/cpopen{{ end }} \
             --operator_ns=$(params.PROJECT_CPD_INST_OPERATORS) \
             --cluster_resources=true
             [ $? -ne 0 ] && exit 1
