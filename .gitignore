@@ -16,6 +16,7 @@ charts/*/charts/
 values
 
 # Temporary files
+temp
 *.tmp
 *.log
 *.swp
