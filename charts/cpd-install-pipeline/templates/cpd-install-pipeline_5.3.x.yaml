@@ -425,6 +425,18 @@ spec:
     taskRef:
       kind: Task
       name: olm-utils
+  - name: versioninfo
+    params:
+    - name: OLM_UTILS_IMAGE
+      value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
+    - name: CP-INSTALL-OPTIONS
+      value: $(params.CP-INSTALL-OPTIONS)
+    - name: OLM_CMD
+      value: |
+        versioninfo
+    taskRef:
+      kind: Task
+      name: olm-utils
   - name: kubelet-pod-pids-limit
     retries: 10
     params:
@@ -528,6 +540,7 @@ spec:
     - update-global-pull-secret
     - kubelet-pod-pids-limit
     - kubelet-db2-limited-priv
+    - versioninfo
   - name: nfd-operator
     retries: 3
     params:
