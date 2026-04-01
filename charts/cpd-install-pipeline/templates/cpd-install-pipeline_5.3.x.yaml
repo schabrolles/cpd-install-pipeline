@@ -965,9 +965,10 @@ spec:
         echo
         echo "> Patch inferenceservice-config CM"
 
-        oc patch cm inferenceservice-config -n redhat-ods-applications -p '{"metadata":{"annotations":{"opendatahub.io/managed":"false"}}}'
-        sleep 1
         oc get configmap inferenceservice-config -n redhat-ods-applications -o yaml | yq '.data.ingress |= (from_json | .domainTemplate = "example.com" | to_json | . style="literal")' | oc replace -f -
+        sleep 1
+        oc patch cm inferenceservice-config -n redhat-ods-applications -p '{"metadata":{"annotations":{"opendatahub.io/managed":"false"}}}'
+
     - name: CP-INSTALL-OPTIONS
       value: cpd-install-pipeline-install-option
     - name: PRIVATE_REGISTRY_SECRET
