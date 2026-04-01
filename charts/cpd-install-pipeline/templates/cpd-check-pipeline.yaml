@@ -40,8 +40,6 @@ spec:
       params:
       - name: OLM_UTILS_IMAGE
         value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
-      - name: CP-INSTALL-OPTIONS
-        value: $(params.CP-INSTALL-OPTIONS)
       - name: OLM_CMD
         value: |
           versioninfo
