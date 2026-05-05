@@ -175,7 +175,7 @@ spec:
       spec: null
       steps:
       - computeResources: {}
-        image: $(params.OLM_UTILS_IMAGE):$(params.VERSION)
+        image: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{  .Values.arch }}{{- end }}
         name: check-cert-manager
         script: |
           # Test if cert-manager is already present
@@ -255,8 +255,8 @@ spec:
               echo -n "true" > $(results.openshift-ai.path)
               echo " => Setup OpenShift AI"
             fi
+
             # Verify if knative_eventing is requested in watsonx_orchestrate install-options (mode agentic_assistant or agentic_skills_assistant)
-            
             if [ $(yq 'select(.non_olm.watsonxOrchestrate != null) | .non_olm.watsonxOrchestrate.installMode' /tmp/install-options/install-options.yml) = "agentic_assistant" ] || [ $(yq 'select(.non_olm.watsonxOrchestrate != null) | .non_olm.watsonxOrchestrate.installMode' /tmp/install-options/install-options.yml) = "agentic_skills_assistant" ]; then
               echo -n "true" > $(results.ibm-events-operator.path) 
               echo " => Setup Knative Eventing"
@@ -949,7 +949,7 @@ spec:
             ray:
               managementState: Removed
             trainingoperator:
-              managementState: Managed
+              managementState: {{ if ne .Values.arch "x86" }}Removed{{ else }}Managed{{ end }}
             trustyai:
               managementState: Removed
             workbenches:
@@ -1428,7 +1428,7 @@ spec:
       value: $(params.OLM_UTILS_IMAGE):$(params.VERSION){{- if ne .Values.arch "x86" -}} .{{ .Values.arch }}{{- end }}
     - name: OLM_CMD
       value: |-
-        list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS)
+        list-deployed-components --cpd_instance_ns=$(params.PROJECT_CPD_INST_OPERANDS) && oc create cm -n {{ .Release.Namespace }} components-$(params.PROJECT_CPD_INST_OPERANDS) --from-file=/tmp/work/scan/scan.yaml
     - name: CP-INSTALL-OPTIONS
       value: $(params.CP-INSTALL-OPTIONS)
     runAfter:
